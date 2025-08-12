@@ -1,68 +1,62 @@
-// 本地下载器 - 处理m3u8下载和转换
 const { createFFmpeg, fetchFile } = FFmpeg;
 
+const ffmpeg = createFFmpeg({
+  corePath: chrome.runtime.getURL("lib/ffmpeg-core.js"),
+  log: true,
+  mainName: "main",
+});
+
+async function ensureFFmpegLoaded() {
+  if (!ffmpeg.isLoaded()) {
+    await ffmpeg.load();
+  }
+}
+
+// 本地下载器 - 使用全局 ffmpeg，将 TS 合并并转换为 MP4
 class LocalM3U8Downloader {
   constructor() {
-    this.ffmpeg = null;
+    this.ffmpeg = ffmpeg; // 复用已创建的全局实例
     this.tsSegments = [];
     this.key = null;
     this.iv = null;
     this.isDownloading = false;
   }
 
-  // 初始化FFmpeg
-  async initFFmpeg() {
-    if (!this.ffmpeg) {
-      this.ffmpeg = createFFmpeg({
-        corePath: chrome.runtime.getURL("lib/ffmpeg-core.js"),
-        log: false,
-        mainName: 'main',
-        workerPath: chrome.runtime.getURL("lib/ffmpeg-core.worker.js")
-      });
-    }
-
-    if (this.ffmpeg.isLoaded()) {
-      await this.ffmpeg.exit();
-    }
-
-    await this.ffmpeg.load();
-  }
-
   // 解析m3u8文件
   async parseM3U8(m3u8Url) {
     const response = await fetch(m3u8Url);
     const text = await response.text();
-    const lines = text.split('\n');
-    
+    const lines = text.split("\n");
+
     const segments = [];
     let key = null;
     let iv = null;
-    let baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf('/') + 1);
+    const baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf("/") + 1);
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // 解析加密信息
-      if (line.startsWith('#EXT-X-KEY')) {
+      if (line.startsWith("#EXT-X-KEY")) {
         const keyMatch = line.match(/URI="([^"]+)"/);
         const ivMatch = line.match(/IV=0x([0-9A-Fa-f]+)/);
-        
+
         if (keyMatch) {
           const keyUrl = this.resolveUrl(keyMatch[1], baseUrl);
           const keyResponse = await fetch(keyUrl);
           key = await keyResponse.arrayBuffer();
         }
-        
+
         if (ivMatch) {
           iv = this.hexToBytes(ivMatch[1]);
         }
       }
-      
-      // 解析ts片段
-      if (line && !line.startsWith('#')) {
+
+      // 解析 ts 片段
+      if (line && !line.startsWith("#")) {
         segments.push({
           url: this.resolveUrl(line, baseUrl),
-          index: segments.length
+          index: segments.length,
         });
       }
     }
@@ -76,12 +70,12 @@ class LocalM3U8Downloader {
 
   // 解析URL
   resolveUrl(url, baseUrl) {
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }
-    if (url.startsWith('/')) {
+    if (url.startsWith("/")) {
       const urlObj = new URL(baseUrl);
-      return urlObj.protocol + '//' + urlObj.host + url;
+      return urlObj.protocol + "//" + urlObj.host + url;
     }
     return baseUrl + url;
   }
@@ -95,33 +89,6 @@ class LocalM3U8Downloader {
     return bytes;
   }
 
-  // 解密ts片段
-  async decryptSegment(encryptedData, key, iv, segmentIndex) {
-    if (!key) return encryptedData;
-
-    const actualIv = iv || this.generateIV(segmentIndex);
-    
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      key,
-      { name: 'AES-CBC' },
-      false,
-      ['decrypt']
-    );
-
-    try {
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-CBC', iv: actualIv },
-        cryptoKey,
-        encryptedData
-      );
-      return new Uint8Array(decrypted);
-    } catch (error) {
-      console.error('解密失败:', error);
-      return encryptedData;
-    }
-  }
-
   // 生成IV
   generateIV(segmentIndex) {
     const iv = new Uint8Array(16);
@@ -131,8 +98,35 @@ class LocalM3U8Downloader {
     return iv;
   }
 
+  // 解密ts片段
+  async decryptSegment(encryptedData, key, iv, segmentIndex) {
+    if (!key) return encryptedData;
+
+    const actualIv = iv || this.generateIV(segmentIndex);
+
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      key,
+      { name: "AES-CBC" },
+      false,
+      ["decrypt"]
+    );
+
+    try {
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: actualIv },
+        cryptoKey,
+        encryptedData
+      );
+      return new Uint8Array(decrypted);
+    } catch (error) {
+      console.error("解密失败:", error);
+      return encryptedData;
+    }
+  }
+
   // 下载单个ts片段
-  async downloadSegment(segment, onProgress) {
+  async downloadSegment(segment) {
     try {
       const response = await fetch(segment.url);
       const arrayBuffer = await response.arrayBuffer();
@@ -140,7 +134,12 @@ class LocalM3U8Downloader {
 
       // 如果有加密，进行解密
       if (this.key) {
-        data = await this.decryptSegment(data, this.key, this.iv, segment.index);
+        data = await this.decryptSegment(
+          data,
+          this.key,
+          this.iv,
+          segment.index
+        );
       }
 
       return data;
@@ -150,21 +149,21 @@ class LocalM3U8Downloader {
     }
   }
 
-  // 下载所有ts片段
+  // 下载所有ts片段（顺序下载，便于展示准确进度）
   async downloadAllSegments(onProgress) {
     const allSegments = [];
     const total = this.tsSegments.length;
-    
+
     for (let i = 0; i < total; i++) {
       const segment = this.tsSegments[i];
-      const data = await this.downloadSegment(segment, onProgress);
+      const data = await this.downloadSegment(segment);
       allSegments.push(data);
-      
+
       if (onProgress) {
         onProgress({
           current: i + 1,
-          total: total,
-          percent: Math.round(((i + 1) / total) * 100)
+          total,
+          percent: Math.round(((i + 1) / total) * 100),
         });
       }
     }
@@ -173,7 +172,7 @@ class LocalM3U8Downloader {
     const totalLength = allSegments.reduce((sum, seg) => sum + seg.length, 0);
     const mergedData = new Uint8Array(totalLength);
     let offset = 0;
-    
+
     for (const segment of allSegments) {
       mergedData.set(segment, offset);
       offset += segment.length;
@@ -182,42 +181,47 @@ class LocalM3U8Downloader {
     return mergedData;
   }
 
-  // 使用FFmpeg转换为MP4
+  // 使用 FFmpeg 转换为 MP4（复用全局 ffmpeg）
   async convertToMp4(tsData, outputFileName) {
-    await this.initFFmpeg();
+    await ensureFFmpegLoaded();
 
-    const inputFileName = 'input.ts';
-    const outputFileNameMp4 = outputFileName.endsWith('.mp4') ? outputFileName : outputFileName + '.mp4';
+    const inputFileName = "input.ts";
+    const outputFileNameMp4 = outputFileName.endsWith(".mp4")
+      ? outputFileName
+      : outputFileName + ".mp4";
 
     // 写入ts文件
-    this.ffmpeg.FS('writeFile', inputFileName, tsData);
+    this.ffmpeg.FS("writeFile", inputFileName, tsData);
 
-    // 执行转换
+    // 执行转换（直接 copy）
     await this.ffmpeg.run(
-      '-i', inputFileName,
-      '-c', 'copy',
-      '-bsf:a', 'aac_adtstoasc',
+      "-i",
+      inputFileName,
+      "-c",
+      "copy",
+      "-bsf:a",
+      "aac_adtstoasc",
       outputFileNameMp4
     );
 
     // 读取输出文件
-    const data = this.ffmpeg.FS('readFile', outputFileNameMp4);
-    
-    // 清理文件
-    this.ffmpeg.FS('unlink', inputFileName);
-    this.ffmpeg.FS('unlink', outputFileNameMp4);
+    const data = this.ffmpeg.FS("readFile", outputFileNameMp4);
 
-    return new Blob([data.buffer], { type: 'video/mp4' });
+    // 清理文件
+    this.ffmpeg.FS("unlink", inputFileName);
+    this.ffmpeg.FS("unlink", outputFileNameMp4);
+
+    return new Blob([data.buffer], { type: "video/mp4" });
   }
 
   // 下载文件
   downloadFile(blob, fileName) {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
     a.click();
-    
+
     // 清理
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
@@ -225,41 +229,48 @@ class LocalM3U8Downloader {
   // 主下载函数
   async download(m3u8Url, fileName, onProgress) {
     if (this.isDownloading) {
-      throw new Error('已有下载任务正在进行');
+      throw new Error("已有下载任务正在进行");
     }
 
     this.isDownloading = true;
 
     try {
       // 1. 解析m3u8
-      if (onProgress) onProgress({ stage: 'parsing', message: '正在解析m3u8文件...' });
+      if (onProgress)
+        onProgress({ stage: "parsing", message: "正在解析m3u8文件..." });
       await this.parseM3U8(m3u8Url);
 
       // 2. 下载所有ts片段
-      if (onProgress) onProgress({ stage: 'downloading', message: '正在下载视频片段...' });
+      if (onProgress)
+        onProgress({ stage: "downloading", message: "正在下载视频片段..." });
       const tsData = await this.downloadAllSegments((progress) => {
         if (onProgress) {
           onProgress({
-            stage: 'downloading',
+            stage: "downloading",
             message: `正在下载视频片段... (${progress.current}/${progress.total})`,
-            percent: progress.percent
+            percent: progress.percent,
           });
         }
       });
 
       // 3. 转换为MP4
-      if (onProgress) onProgress({ stage: 'converting', message: '正在转换为MP4格式...' });
+      if (onProgress)
+        onProgress({ stage: "converting", message: "正在转换为MP4格式..." });
       const mp4Blob = await this.convertToMp4(tsData, fileName);
 
       // 4. 触发下载
-      if (onProgress) onProgress({ stage: 'saving', message: '正在保存文件...' });
-      this.downloadFile(mp4Blob, fileName.endsWith('.mp4') ? fileName : fileName + '.mp4');
+      if (onProgress)
+        onProgress({ stage: "saving", message: "正在保存文件..." });
+      this.downloadFile(
+        mp4Blob,
+        fileName.endsWith(".mp4") ? fileName : fileName + ".mp4"
+      );
 
-      if (onProgress) onProgress({ stage: 'completed', message: '下载完成！' });
-      
-      return { success: true, message: '下载完成' };
+      if (onProgress) onProgress({ stage: "completed", message: "下载完成！" });
+
+      return { success: true, message: "下载完成" };
     } catch (error) {
-      console.error('下载失败:', error);
+      console.error("下载失败:", error);
       throw error;
     } finally {
       this.isDownloading = false;
@@ -267,5 +278,237 @@ class LocalM3U8Downloader {
   }
 }
 
-// 导出给popup.js使用
+// 简化版 - 不用 FFmpeg，直接合并并保存 .ts
+class LocalM3U8DownloaderSimple {
+  constructor() {
+    this.tsSegments = [];
+    this.key = null;
+    this.iv = null;
+    this.isDownloading = false;
+  }
+
+  async parseM3U8(m3u8Url) {
+    const response = await fetch(m3u8Url);
+    const text = await response.text();
+    const lines = text.split("\n");
+
+    const segments = [];
+    let key = null;
+    let iv = null;
+    const baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf("/") + 1);
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      if (line.startsWith("#EXT-X-KEY")) {
+        const keyMatch = line.match(/URI="([^"]+)"/);
+        const ivMatch = line.match(/IV=0x([0-9A-Fa-f]+)/);
+
+        if (keyMatch) {
+          const keyUrl = this.resolveUrl(keyMatch[1], baseUrl);
+          const keyResponse = await fetch(keyUrl);
+          key = await keyResponse.arrayBuffer();
+        }
+
+        if (ivMatch) {
+          iv = this.hexToBytes(ivMatch[1]);
+        }
+      }
+
+      if (line && !line.startsWith("#")) {
+        segments.push({
+          url: this.resolveUrl(line, baseUrl),
+          index: segments.length,
+        });
+      }
+    }
+
+    this.tsSegments = segments;
+    this.key = key;
+    this.iv = iv;
+
+    return segments;
+  }
+
+  resolveUrl(url, baseUrl) {
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+    if (url.startsWith("/")) {
+      const urlObj = new URL(baseUrl);
+      return urlObj.protocol + "//" + urlObj.host + url;
+    }
+    return baseUrl + url;
+  }
+
+  hexToBytes(hex) {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
+
+  generateIV(segmentIndex) {
+    const iv = new Uint8Array(16);
+    const indexBytes = new DataView(new ArrayBuffer(4));
+    indexBytes.setUint32(0, segmentIndex, false);
+    iv.set(new Uint8Array(indexBytes.buffer), 12);
+    return iv;
+  }
+
+  async decryptSegment(encryptedData, key, iv, segmentIndex) {
+    if (!key) return encryptedData;
+
+    const actualIv = iv || this.generateIV(segmentIndex);
+
+    try {
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        key,
+        { name: "AES-CBC" },
+        false,
+        ["decrypt"]
+      );
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: actualIv },
+        cryptoKey,
+        encryptedData
+      );
+      return new Uint8Array(decrypted);
+    } catch (error) {
+      console.error("解密失败，尝试不解密:", error);
+      return encryptedData;
+    }
+  }
+
+  async downloadSegment(segment) {
+    try {
+      const response = await fetch(segment.url);
+      const arrayBuffer = await response.arrayBuffer();
+      let data = new Uint8Array(arrayBuffer);
+
+      if (this.key) {
+        data = await this.decryptSegment(
+          data,
+          this.key,
+          this.iv,
+          segment.index
+        );
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`下载片段 ${segment.index} 失败:`, error);
+      // 简单重试一次
+      await new Promise((r) => setTimeout(r, 1000));
+      const response = await fetch(segment.url);
+      const arrayBuffer = await response.arrayBuffer();
+      let data = new Uint8Array(arrayBuffer);
+      if (this.key) {
+        data = await this.decryptSegment(
+          data,
+          this.key,
+          this.iv,
+          segment.index
+        );
+      }
+      return data;
+    }
+  }
+
+  async downloadAllSegments(onProgress) {
+    const allSegments = [];
+    const total = this.tsSegments.length;
+
+    // 简单并发（5个一组）
+    const concurrency = 5;
+    const chunks = [];
+    for (let i = 0; i < total; i += concurrency) {
+      chunks.push(this.tsSegments.slice(i, i + concurrency));
+    }
+
+    let downloaded = 0;
+    for (const chunk of chunks) {
+      const results = await Promise.all(
+        chunk.map((s) => this.downloadSegment(s))
+      );
+      allSegments.push(...results);
+
+      downloaded += chunk.length;
+      if (onProgress) {
+        onProgress({
+          current: downloaded,
+          total,
+          percent: Math.round((downloaded / total) * 100),
+        });
+      }
+    }
+
+    const totalLength = allSegments.reduce((sum, seg) => sum + seg.length, 0);
+    const mergedData = new Uint8Array(totalLength);
+    let offset = 0;
+
+    for (const segment of allSegments) {
+      mergedData.set(segment, offset);
+      offset += segment.length;
+    }
+
+    return mergedData;
+  }
+
+  downloadFile(data, fileName) {
+    const blob = new Blob([data], { type: "video/mp2t" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName.endsWith(".ts") ? fileName : fileName + ".ts";
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+
+  async download(m3u8Url, fileName, onProgress) {
+    if (this.isDownloading) {
+      throw new Error("已有下载任务正在进行");
+    }
+
+    this.isDownloading = true;
+
+    try {
+      if (onProgress)
+        onProgress({ stage: "parsing", message: "正在解析m3u8文件..." });
+      await this.parseM3U8(m3u8Url);
+
+      if (onProgress)
+        onProgress({ stage: "downloading", message: "正在下载视频片段..." });
+      const tsData = await this.downloadAllSegments((progress) => {
+        if (onProgress) {
+          onProgress({
+            stage: "downloading",
+            message: `正在下载视频片段... (${progress.current}/${progress.total})`,
+            percent: progress.percent,
+          });
+        }
+      });
+
+      if (onProgress)
+        onProgress({ stage: "saving", message: "正在保存文件..." });
+      this.downloadFile(tsData, fileName);
+
+      if (onProgress) onProgress({ stage: "completed", message: "下载完成！" });
+
+      return { success: true, message: "下载完成" };
+    } catch (error) {
+      console.error("下载失败:", error);
+      throw error;
+    } finally {
+      this.isDownloading = false;
+    }
+  }
+}
+
+// 导出给 popup.js 使用
 window.LocalM3U8Downloader = LocalM3U8Downloader;
+window.LocalM3U8DownloaderSimple = LocalM3U8DownloaderSimple;

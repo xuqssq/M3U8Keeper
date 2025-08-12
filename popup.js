@@ -292,7 +292,6 @@ async function localDownloadVideo(item) {
   }
 
   isDownloading = true;
-  const downloader = new LocalM3U8DownloaderSimple();
   
   try {
     updateDownloadStatus('正在初始化本地下载...', 'processing');
@@ -300,14 +299,30 @@ async function localDownloadVideo(item) {
     // 获取安全的文件名
     const fileName = getSafeFileName(item.tabTitle);
     
-    // 开始下载
-    await downloader.download(item.url, fileName, (progress) => {
-      if (progress.stage === 'downloading' && progress.percent) {
-        updateDownloadProgress(progress.percent);
-      } else {
-        updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
-      }
-    });
+    // 尝试使用带FFmpeg的下载器（可转换为MP4）
+    const ffmpegDownloader = new LocalM3U8Downloader();
+    
+    try {
+      await ffmpegDownloader.download(item.url, fileName, (progress) => {
+        if (progress.stage === 'downloading' && progress.percent) {
+          updateDownloadProgress(progress.percent);
+        } else {
+          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
+        }
+      });
+    } catch (ffmpegError) {
+      console.log('FFmpeg下载失败，尝试使用简化版下载器:', ffmpegError);
+      
+      // 如果FFmpeg失败，回退到简化版下载器
+      const simpleDownloader = new LocalM3U8DownloaderSimple();
+      await simpleDownloader.download(item.url, fileName, (progress) => {
+        if (progress.stage === 'downloading' && progress.percent) {
+          updateDownloadProgress(progress.percent);
+        } else {
+          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
+        }
+      });
+    }
     
     // 下载完成
     setTimeout(() => {

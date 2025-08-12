@@ -40,9 +40,7 @@
   "web_accessible_resources": [{
     "resources": [
       "injected.js",
-      "data/*",
       "lib/*"
-
     ],
     "matches": ["<all_urls>"]
   }],
