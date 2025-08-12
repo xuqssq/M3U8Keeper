@@ -99,8 +99,15 @@ function createUrlItem(item) {
   deleteBtn.textContent = '删除';
   deleteBtn.onclick = () => deleteUrl(item.id);
   
+  // 本地下载按钮
+  const localDownloadBtn = document.createElement('button');
+  localDownloadBtn.className = 'btn btn-small btn-warning';
+  localDownloadBtn.textContent = '本地下载';
+  localDownloadBtn.onclick = () => localDownloadVideo(item);
+  
   buttonContainer.appendChild(copyBtn);
   buttonContainer.appendChild(downloadBtn);
+  buttonContainer.appendChild(localDownloadBtn);
   buttonContainer.appendChild(deleteBtn);
   
   urlItem.appendChild(infoDiv);
@@ -275,4 +282,46 @@ function getSafeFileName(tabTitle) {
 function truncateText(text, maxLength) {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
+}
+
+// 本地下载视频
+async function localDownloadVideo(item) {
+  if (isDownloading) {
+    alert('已有视频正在下载中，请等待当前下载完成后再试！');
+    return;
+  }
+
+  isDownloading = true;
+  const downloader = new LocalM3U8DownloaderSimple();
+  
+  try {
+    updateDownloadStatus('正在初始化本地下载...', 'processing');
+    
+    // 获取安全的文件名
+    const fileName = getSafeFileName(item.tabTitle);
+    
+    // 开始下载
+    await downloader.download(item.url, fileName, (progress) => {
+      if (progress.stage === 'downloading' && progress.percent) {
+        updateDownloadProgress(progress.percent);
+      } else {
+        updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
+      }
+    });
+    
+    // 下载完成
+    setTimeout(() => {
+      downloadStatusElement.style.display = 'none';
+    }, 3000);
+    
+  } catch (error) {
+    console.error('本地下载失败:', error);
+    updateDownloadStatus(`下载失败: ${error.message}`, 'error');
+    
+    setTimeout(() => {
+      downloadStatusElement.style.display = 'none';
+    }, 5000);
+  } finally {
+    isDownloading = false;
+  }
 }
