@@ -161,7 +161,7 @@ function downloadVideo(item) {
   }
   
   isDownloading = true;
-  updateDownloadStatus('正在创建下载任务...', 'processing');
+  updateDownloadStatus('正在创建下载任务...', 'processing', 'server');
   
   // 获取安全的文件名
   const fileName = getSafeFileName(item.tabTitle);
@@ -172,9 +172,9 @@ function downloadVideo(item) {
     fileName: fileName
   }, (response) => {
     if (response.success) {
-      updateDownloadStatus(response.message, 'success');
+      updateDownloadStatus(response.message, 'success', 'server');
     } else {
-      updateDownloadStatus(`下载失败: ${response.error}`, 'error');
+      updateDownloadStatus(`下载失败: ${response.error}`, 'error', 'server');
     }
     
     isDownloading = false;
@@ -214,15 +214,25 @@ function clearAllUrls() {
 }
 
 // 更新下载状态
-function updateDownloadStatus(message, type = 'info') {
+function updateDownloadStatus(message, type = 'info', downloadType = 'server') {
   const statusText = downloadStatusElement.querySelector('.status-text');
   const progressBar = downloadStatusElement.querySelector('.progress-bar');
+  const progressFill = downloadStatusElement.querySelector('.progress-fill');
   
   downloadStatusElement.style.display = 'block';
   statusText.textContent = message;
   
   // 移除所有状态类
   downloadStatusElement.className = 'download-status';
+  progressFill.className = 'progress-fill';
+  
+  // 添加下载类型类
+  if (downloadType === 'local') {
+    downloadStatusElement.classList.add('local-download');
+    progressFill.classList.add('local-download');
+  } else {
+    progressFill.classList.add('server-download');
+  }
   
   // 添加对应的状态类
   switch(type) {
@@ -244,12 +254,12 @@ function updateDownloadStatus(message, type = 'info') {
 }
 
 // 更新下载进度
-function updateDownloadProgress(progress) {
+function updateDownloadProgress(progress, downloadType = 'server') {
   const progressFill = document.querySelector('.progress-fill');
   if (progressFill) {
     progressFill.style.width = `${progress}%`;
   }
-  updateDownloadStatus(`正在处理视频... ${progress}%`, 'processing');
+  updateDownloadStatus(`正在处理视频... ${progress}%`, 'processing', downloadType);
 }
 
 // 获取安全的文件名
@@ -294,7 +304,7 @@ async function localDownloadVideo(item) {
   isDownloading = true;
   
   try {
-    updateDownloadStatus('正在初始化本地下载...', 'processing');
+    updateDownloadStatus('正在初始化本地下载...', 'processing', 'local');
     
     // 获取安全的文件名
     const fileName = getSafeFileName(item.tabTitle);
@@ -305,9 +315,9 @@ async function localDownloadVideo(item) {
     try {
       await ffmpegDownloader.download(item.url, fileName, (progress) => {
         if (progress.stage === 'downloading' && progress.percent) {
-          updateDownloadProgress(progress.percent);
+          updateDownloadProgress(progress.percent, 'local');
         } else {
-          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
+          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing', 'local');
         }
       });
     } catch (ffmpegError) {
@@ -317,9 +327,9 @@ async function localDownloadVideo(item) {
       const simpleDownloader = new LocalM3U8DownloaderSimple();
       await simpleDownloader.download(item.url, fileName, (progress) => {
         if (progress.stage === 'downloading' && progress.percent) {
-          updateDownloadProgress(progress.percent);
+          updateDownloadProgress(progress.percent, 'local');
         } else {
-          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing');
+          updateDownloadStatus(progress.message, progress.stage === 'completed' ? 'success' : 'processing', 'local');
         }
       });
     }
@@ -331,7 +341,7 @@ async function localDownloadVideo(item) {
     
   } catch (error) {
     console.error('本地下载失败:', error);
-    updateDownloadStatus(`下载失败: ${error.message}`, 'error');
+    updateDownloadStatus(`下载失败: ${error.message}`, 'error', 'local');
     
     setTimeout(() => {
       downloadStatusElement.style.display = 'none';

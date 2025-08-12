@@ -213,6 +213,10 @@ body {
 .status-text {
   display: block;
   font-size: 12px;
+  margin-bottom: 0;
+}
+
+.status-processing .status-text {
   margin-bottom: 8px;
 }
 
@@ -232,6 +236,14 @@ body {
   width: 0;
 }
 
+.progress-fill.server-download {
+  background: #2196F3;
+}
+
+.progress-fill.local-download {
+  background: #ff9800;
+}
+
 .status-success {
   border-color: #4CAF50;
 }
@@ -249,11 +261,19 @@ body {
 }
 
 .status-processing {
-  border-color: #ff9800;
+  border-color: #2196F3;
   animation: pulse 1.5s infinite;
 }
 
 .status-processing .status-text {
+  color: #2196F3;
+}
+
+.status-processing.local-download {
+  border-color: #ff9800;
+}
+
+.status-processing.local-download .status-text {
   color: #ff9800;
 }
 
