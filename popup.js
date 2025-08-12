@@ -313,7 +313,7 @@ async function localDownloadVideo(item) {
     } catch (ffmpegError) {
       console.log('FFmpeg下载失败，尝试使用简化版下载器:', ffmpegError);
       
-      // 如果FFmpeg失败，回退到简化版下载器
+      // 如果FFmpeg失败，回退到只下载 完整 ts
       const simpleDownloader = new LocalM3U8DownloaderSimple();
       await simpleDownloader.download(item.url, fileName, (progress) => {
         if (progress.stage === 'downloading' && progress.percent) {

@@ -1,4 +1,4 @@
-const { createFFmpeg, fetchFile } = FFmpeg;
+const { createFFmpeg } = FFmpeg;
 
 const ffmpeg = createFFmpeg({
   corePath: chrome.runtime.getURL("lib/ffmpeg-core.js"),
@@ -10,6 +10,134 @@ async function ensureFFmpegLoaded() {
   if (!ffmpeg.isLoaded()) {
     await ffmpeg.load();
   }
+}
+
+// Shared helpers
+function resolveUrlShared(url, baseUrl) {
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  if (url.startsWith("/")) {
+    const urlObj = new URL(baseUrl);
+    return urlObj.protocol + "//" + urlObj.host + url;
+  }
+  return baseUrl + url;
+}
+
+function hexToBytesShared(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+function generateIVShared(segmentIndex) {
+  const iv = new Uint8Array(16);
+  const indexBytes = new DataView(new ArrayBuffer(4));
+  indexBytes.setUint32(0, segmentIndex, false);
+  iv.set(new Uint8Array(indexBytes.buffer), 12);
+  return iv;
+}
+
+async function decryptSegmentData(encryptedData, key, iv, segmentIndex) {
+  if (!key) return encryptedData;
+
+  const actualIv = iv || generateIVShared(segmentIndex);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    key,
+    { name: "AES-CBC" },
+    false,
+    ["decrypt"]
+  );
+
+  try {
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-CBC", iv: actualIv },
+      cryptoKey,
+      encryptedData
+    );
+    return new Uint8Array(decrypted);
+  } catch (error) {
+    console.error("解密失败:", error);
+    return encryptedData;
+  }
+}
+
+async function parseM3U8Manifest(m3u8Url) {
+  const response = await fetch(m3u8Url);
+  const text = await response.text();
+  const lines = text.split("\n");
+
+  const segments = [];
+  let key = null;
+  let iv = null;
+  const baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf("/") + 1);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line.startsWith("#EXT-X-KEY")) {
+      const keyMatch = line.match(/URI="([^"]+)"/);
+      const ivMatch = line.match(/IV=0x([0-9A-Fa-f]+)/);
+
+      if (keyMatch) {
+        const keyUrl = resolveUrlShared(keyMatch[1], baseUrl);
+        const keyResponse = await fetch(keyUrl);
+        key = await keyResponse.arrayBuffer();
+      }
+
+      if (ivMatch) {
+        iv = hexToBytesShared(ivMatch[1]);
+      }
+    }
+
+    if (line && !line.startsWith("#")) {
+      segments.push({
+        url: resolveUrlShared(line, baseUrl),
+        index: segments.length,
+      });
+    }
+  }
+
+  return { segments, key, iv };
+}
+
+async function fetchSegmentData(segment, key, iv, retryOnce = false) {
+  try {
+    const response = await fetch(segment.url);
+    const arrayBuffer = await response.arrayBuffer();
+    let data = new Uint8Array(arrayBuffer);
+
+    if (key) {
+      data = await decryptSegmentData(data, key, iv, segment.index);
+    }
+    return data;
+  } catch (error) {
+    console.error(`下载片段 ${segment.index} 失败:`, error);
+    if (!retryOnce) throw error;
+    await new Promise((r) => setTimeout(r, 1000));
+    const response = await fetch(segment.url);
+    const arrayBuffer = await response.arrayBuffer();
+    let data = new Uint8Array(arrayBuffer);
+    if (key) {
+      data = await decryptSegmentData(data, key, iv, segment.index);
+    }
+    return data;
+  }
+}
+
+function concatUint8Arrays(chunks) {
+  const totalLength = chunks.reduce((sum, seg) => sum + seg.length, 0);
+  const mergedData = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const segment of chunks) {
+    mergedData.set(segment, offset);
+    offset += segment.length;
+  }
+  return mergedData;
 }
 
 // 本地下载器 - 使用全局 ffmpeg，将 TS 合并并转换为 MP4
@@ -24,129 +152,36 @@ class LocalM3U8Downloader {
 
   // 解析m3u8文件
   async parseM3U8(m3u8Url) {
-    const response = await fetch(m3u8Url);
-    const text = await response.text();
-    const lines = text.split("\n");
-
-    const segments = [];
-    let key = null;
-    let iv = null;
-    const baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf("/") + 1);
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      // 解析加密信息
-      if (line.startsWith("#EXT-X-KEY")) {
-        const keyMatch = line.match(/URI="([^"]+)"/);
-        const ivMatch = line.match(/IV=0x([0-9A-Fa-f]+)/);
-
-        if (keyMatch) {
-          const keyUrl = this.resolveUrl(keyMatch[1], baseUrl);
-          const keyResponse = await fetch(keyUrl);
-          key = await keyResponse.arrayBuffer();
-        }
-
-        if (ivMatch) {
-          iv = this.hexToBytes(ivMatch[1]);
-        }
-      }
-
-      // 解析 ts 片段
-      if (line && !line.startsWith("#")) {
-        segments.push({
-          url: this.resolveUrl(line, baseUrl),
-          index: segments.length,
-        });
-      }
-    }
-
+    const { segments, key, iv } = await parseM3U8Manifest(m3u8Url);
     this.tsSegments = segments;
     this.key = key;
     this.iv = iv;
-
     return segments;
   }
 
   // 解析URL
   resolveUrl(url, baseUrl) {
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    if (url.startsWith("/")) {
-      const urlObj = new URL(baseUrl);
-      return urlObj.protocol + "//" + urlObj.host + url;
-    }
-    return baseUrl + url;
+    return resolveUrlShared(url, baseUrl);
   }
 
   // 十六进制转字节数组
   hexToBytes(hex) {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
+    return hexToBytesShared(hex);
   }
 
   // 生成IV
   generateIV(segmentIndex) {
-    const iv = new Uint8Array(16);
-    const indexBytes = new DataView(new ArrayBuffer(4));
-    indexBytes.setUint32(0, segmentIndex, false);
-    iv.set(new Uint8Array(indexBytes.buffer), 12);
-    return iv;
+    return generateIVShared(segmentIndex);
   }
 
   // 解密ts片段
   async decryptSegment(encryptedData, key, iv, segmentIndex) {
-    if (!key) return encryptedData;
-
-    const actualIv = iv || this.generateIV(segmentIndex);
-
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      key,
-      { name: "AES-CBC" },
-      false,
-      ["decrypt"]
-    );
-
-    try {
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: actualIv },
-        cryptoKey,
-        encryptedData
-      );
-      return new Uint8Array(decrypted);
-    } catch (error) {
-      console.error("解密失败:", error);
-      return encryptedData;
-    }
+    return decryptSegmentData(encryptedData, key, iv, segmentIndex);
   }
 
   // 下载单个ts片段
   async downloadSegment(segment) {
-    try {
-      const response = await fetch(segment.url);
-      const arrayBuffer = await response.arrayBuffer();
-      let data = new Uint8Array(arrayBuffer);
-
-      // 如果有加密，进行解密
-      if (this.key) {
-        data = await this.decryptSegment(
-          data,
-          this.key,
-          this.iv,
-          segment.index
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.error(`下载片段 ${segment.index} 失败:`, error);
-      throw error;
-    }
+    return fetchSegmentData(segment, this.key, this.iv, false);
   }
 
   // 下载所有ts片段（顺序下载，便于展示准确进度）
@@ -168,17 +203,7 @@ class LocalM3U8Downloader {
       }
     }
 
-    // 合并所有片段
-    const totalLength = allSegments.reduce((sum, seg) => sum + seg.length, 0);
-    const mergedData = new Uint8Array(totalLength);
-    let offset = 0;
-
-    for (const segment of allSegments) {
-      mergedData.set(segment, offset);
-      offset += segment.length;
-    }
-
-    return mergedData;
+    return concatUint8Arrays(allSegments);
   }
 
   // 使用 FFmpeg 转换为 MP4（复用全局 ffmpeg）
@@ -278,7 +303,7 @@ class LocalM3U8Downloader {
   }
 }
 
-// 简化版 - 不用 FFmpeg，直接合并并保存 .ts
+// 直接合并并保存 .ts
 class LocalM3U8DownloaderSimple {
   constructor() {
     this.tsSegments = [];
@@ -288,134 +313,31 @@ class LocalM3U8DownloaderSimple {
   }
 
   async parseM3U8(m3u8Url) {
-    const response = await fetch(m3u8Url);
-    const text = await response.text();
-    const lines = text.split("\n");
-
-    const segments = [];
-    let key = null;
-    let iv = null;
-    const baseUrl = m3u8Url.substring(0, m3u8Url.lastIndexOf("/") + 1);
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-
-      if (line.startsWith("#EXT-X-KEY")) {
-        const keyMatch = line.match(/URI="([^"]+)"/);
-        const ivMatch = line.match(/IV=0x([0-9A-Fa-f]+)/);
-
-        if (keyMatch) {
-          const keyUrl = this.resolveUrl(keyMatch[1], baseUrl);
-          const keyResponse = await fetch(keyUrl);
-          key = await keyResponse.arrayBuffer();
-        }
-
-        if (ivMatch) {
-          iv = this.hexToBytes(ivMatch[1]);
-        }
-      }
-
-      if (line && !line.startsWith("#")) {
-        segments.push({
-          url: this.resolveUrl(line, baseUrl),
-          index: segments.length,
-        });
-      }
-    }
-
+    const { segments, key, iv } = await parseM3U8Manifest(m3u8Url);
     this.tsSegments = segments;
     this.key = key;
     this.iv = iv;
-
     return segments;
   }
 
   resolveUrl(url, baseUrl) {
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    if (url.startsWith("/")) {
-      const urlObj = new URL(baseUrl);
-      return urlObj.protocol + "//" + urlObj.host + url;
-    }
-    return baseUrl + url;
+    return resolveUrlShared(url, baseUrl);
   }
 
   hexToBytes(hex) {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
+    return hexToBytesShared(hex);
   }
 
   generateIV(segmentIndex) {
-    const iv = new Uint8Array(16);
-    const indexBytes = new DataView(new ArrayBuffer(4));
-    indexBytes.setUint32(0, segmentIndex, false);
-    iv.set(new Uint8Array(indexBytes.buffer), 12);
-    return iv;
+    return generateIVShared(segmentIndex);
   }
 
   async decryptSegment(encryptedData, key, iv, segmentIndex) {
-    if (!key) return encryptedData;
-
-    const actualIv = iv || this.generateIV(segmentIndex);
-
-    try {
-      const cryptoKey = await crypto.subtle.importKey(
-        "raw",
-        key,
-        { name: "AES-CBC" },
-        false,
-        ["decrypt"]
-      );
-
-      const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: actualIv },
-        cryptoKey,
-        encryptedData
-      );
-      return new Uint8Array(decrypted);
-    } catch (error) {
-      console.error("解密失败，尝试不解密:", error);
-      return encryptedData;
-    }
+    return decryptSegmentData(encryptedData, key, iv, segmentIndex);
   }
 
   async downloadSegment(segment) {
-    try {
-      const response = await fetch(segment.url);
-      const arrayBuffer = await response.arrayBuffer();
-      let data = new Uint8Array(arrayBuffer);
-
-      if (this.key) {
-        data = await this.decryptSegment(
-          data,
-          this.key,
-          this.iv,
-          segment.index
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.error(`下载片段 ${segment.index} 失败:`, error);
-      // 简单重试一次
-      await new Promise((r) => setTimeout(r, 1000));
-      const response = await fetch(segment.url);
-      const arrayBuffer = await response.arrayBuffer();
-      let data = new Uint8Array(arrayBuffer);
-      if (this.key) {
-        data = await this.decryptSegment(
-          data,
-          this.key,
-          this.iv,
-          segment.index
-        );
-      }
-      return data;
-    }
+    return fetchSegmentData(segment, this.key, this.iv, true);
   }
 
   async downloadAllSegments(onProgress) {
@@ -446,16 +368,7 @@ class LocalM3U8DownloaderSimple {
       }
     }
 
-    const totalLength = allSegments.reduce((sum, seg) => sum + seg.length, 0);
-    const mergedData = new Uint8Array(totalLength);
-    let offset = 0;
-
-    for (const segment of allSegments) {
-      mergedData.set(segment, offset);
-      offset += segment.length;
-    }
-
-    return mergedData;
+    return concatUint8Arrays(allSegments);
   }
 
   downloadFile(data, fileName) {
