@@ -1,0 +1,255 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  background: #1a1a1a;
+  color: #fff;
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.container {
+  padding: 15px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.url-count {
+  font-size: 12px;
+  color: #888;
+  padding: 4px 8px;
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.url-list {
+  max-height: 400px;
+  overflow-y: auto;
+  background: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.url-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.url-list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.url-list::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.url-list::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+}
+
+.empty-state p {
+  margin-bottom: 10px;
+}
+
+.empty-state .hint {
+  font-size: 12px;
+  color: #666;
+}
+
+.url-item {
+  padding: 12px;
+  border-bottom: 1px solid #333;
+  transition: background 0.2s;
+}
+
+.url-item:hover {
+  background: #333;
+}
+
+.url-item:last-child {
+  border-bottom: none;
+}
+
+.url-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.url-time {
+  font-size: 11px;
+  color: #888;
+}
+
+.url-tab {
+  font-size: 11px;
+  color: #aaa;
+  padding: 2px 6px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.url-text {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: #ddd;
+  word-break: break-all;
+  margin-bottom: 8px;
+  padding: 6px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  border: 1px solid #333;
+}
+
+.url-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #2196F3;
+}
+
+.btn-success {
+  background: #4CAF50;
+}
+
+.btn-danger {
+  background: #f44336;
+}
+
+.btn-secondary {
+  background: #666;
+}
+
+.btn-copied {
+  background: #1976D2 !important;
+}
+
+.download-status {
+  margin-top: 15px;
+  padding: 10px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  border: 1px solid #444;
+  transition: all 0.3s;
+}
+
+.status-text {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2196F3;
+  border-radius: 2px;
+  transition: width 0.3s;
+  width: 0;
+}
+
+.status-success {
+  border-color: #4CAF50;
+}
+
+.status-success .status-text {
+  color: #4CAF50;
+}
+
+.status-error {
+  border-color: #f44336;
+}
+
+.status-error .status-text {
+  color: #f44336;
+}
+
+.status-processing {
+  border-color: #ff9800;
+  animation: pulse 1.5s infinite;
+}
+
+.status-processing .status-text {
+  color: #ff9800;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
