@@ -17,8 +17,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
       
       // 更新badge显示数量
-      chrome.action.setBadgeText({ text: capturedUrls.length.toString() });
-      chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
+      updateBadge(capturedUrls.length);
       
       console.log('捕获到新URL:', request.url);
     }
@@ -29,12 +28,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'DELETE_URL') {
     // 删除指定的URL
     capturedUrls = capturedUrls.filter(u => u.id !== request.id);
-    chrome.action.setBadgeText({ text: capturedUrls.length > 0 ? capturedUrls.length.toString() : '' });
+    updateBadge(capturedUrls.length);
     sendResponse({ success: true, urls: capturedUrls });
   } else if (request.type === 'CLEAR_ALL') {
     // 清空所有URL
     capturedUrls = [];
-    chrome.action.setBadgeText({ text: '' });
+    updateBadge(0);
     sendResponse({ success: true });
   } else if (request.type === 'DOWNLOAD_VIDEO') {
     // 处理视频下载
@@ -177,7 +176,22 @@ async function downloadVideo(m3u8Url, customFileName) {
   }
 }
 
+// 更新badge显示
+function updateBadge(count) {
+  chrome.action.setBadgeText({ text: count > 0 ? count.toString() : '' });
+  chrome.action.setBadgeBackgroundColor({ color: '#ff0000' });
+  // setBadgeTextColor may not be available in all Chrome versions
+  if (chrome.action.setBadgeTextColor) {
+    chrome.action.setBadgeTextColor({ color: '#ffffff' });
+  }
+}
+
 // 监听扩展安装或更新
 chrome.runtime.onInstalled.addListener(() => {
   console.log('ShowMeBug URL Catcher 扩展已安装/更新');
+  // 初始化badge
+  updateBadge(capturedUrls.length);
 });
+
+// 扩展启动时初始化badge
+updateBadge(capturedUrls.length);

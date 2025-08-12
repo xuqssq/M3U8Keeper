@@ -30,6 +30,13 @@ function loadUrls() {
     if (response && response.urls) {
       urlList = response.urls;
       renderUrlList();
+      
+      // 更新badge，确保与实际数量同步
+      chrome.action.setBadgeText({ text: urlList.length > 0 ? urlList.length.toString() : '' });
+      chrome.action.setBadgeBackgroundColor({ color: '#ff0000' });
+      if (chrome.action.setBadgeTextColor) {
+        chrome.action.setBadgeTextColor({ color: '#ffffff' });
+      }
     }
   });
 }
