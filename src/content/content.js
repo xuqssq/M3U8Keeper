@@ -1,7 +1,17 @@
-// Content script - 注入到页面中捕获URL请求
+// M3U8Keeper - Content Script
+// Captures and analyzes network requests for M3U8 media files
 
 (function () {
   "use strict";
+  
+  // Professional console banner
+  console.log(
+    '\n' +
+    '%c M3U8Keeper %c Content Script %c Loaded \n',
+    'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px 0 0 3px; font-weight: bold;',
+    'background: #764ba2; color: white; padding: 4px 8px;',
+    'background: #4ECDC4; color: white; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
+  );
 
   // 检查URL是否需要捕获
   function shouldCaptureUrl(url) {
@@ -49,7 +59,11 @@
           },
           (response) => {
             if (response && response.success) {
-              console.log("URL已发送到后台:", url);
+              console.log(
+                '%c 🎯 CAPTURED %c ' + truncateUrl(url),
+                'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+                'color: #667eea; padding: 2px 4px;'
+              );
             }
           }
         );
@@ -70,20 +84,30 @@
         },
         (response) => {
           if (response && response.success) {
-            console.log("检测到M3U8内容，URL已发送到后台:", url);
+            console.log(
+              '%c 🎯 M3U8 DETECTED %c ' + truncateUrl(url),
+              'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+              'color: #667eea; padding: 2px 4px;'
+            );
           }
         }
       );
     }
   }
 
-  // 创建一个独立的脚本文件来注入
-  const script = document.createElement("script");
-  script.src = chrome.runtime.getURL("src/content/injected.js");
-  script.onload = function () {
-    this.remove();
-  };
-  (document.head || document.documentElement).appendChild(script);
+  // 防止重复注入 - 检查是否已经注入过
+  if (!window.__m3u8KeeperInjected) {
+    window.__m3u8KeeperInjected = true;
+    
+    // 创建一个独立的脚本文件来注入
+    const script = document.createElement("script");
+    script.src = chrome.runtime.getURL("src/content/injected.js");
+    script.setAttribute('data-m3u8keeper', 'injected');
+    script.onload = function () {
+      this.remove();
+    };
+    (document.head || document.documentElement).appendChild(script);
+  }
 
   // 监听来自注入脚本的消息
   window.addEventListener("message", (event) => {
@@ -136,5 +160,17 @@
     subtree: true,
   });
 
-  console.log("M3U8Keeper: Content script已加载");
+  // Helper function to truncate URLs
+  function truncateUrl(url, maxLength = 60) {
+    if (url.length <= maxLength) return url;
+    const start = url.substring(0, 30);
+    const end = url.substring(url.length - 27);
+    return `${start}...${end}`;
+  }
+  
+  console.log(
+    '%c 🏅 %c Content script monitoring started',
+    'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+    'color: #95E77E; padding: 2px 4px;'
+  );
 })();

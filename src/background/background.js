@@ -1,6 +1,18 @@
+// M3U8Keeper - Background Service Worker
+// Manages captured URLs and download operations
+
 const baseUrl = 'https://testmusic.midpoint.lol';
 let capturedUrls = [];
 let isDownloading = false;
+
+// Professional console banner
+console.log(
+  '\n' +
+  '%c M3U8Keeper %c Background Service %c Running \n',
+  'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px 0 0 3px; font-weight: bold;',
+  'background: #764ba2; color: white; padding: 4px 8px;',
+  'background: #95E77E; color: #2D3436; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
+);
 
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -21,7 +33,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // 更新badge显示数量
       updateBadge(capturedUrls.length);
       
-      console.log('捕获到新URL:', request.url, '大小:', request.contentLength);
+      const sizeStr = request.contentLength ? formatFileSize(request.contentLength) : 'Unknown';
+      console.log(
+        '%c 🎯 NEW CAPTURE %c ' + truncateUrl(request.url) + ' %c Size: ' + sizeStr,
+        'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+        'color: #667eea; padding: 2px 4px;',
+        'color: #4ECDC4; font-weight: bold;'
+      );
     }
     sendResponse({ success: true });
   } else if (request.type === 'GET_URLS') {
@@ -29,12 +47,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ urls: capturedUrls });
   } else if (request.type === 'DELETE_URL') {
     // 删除指定的URL
-    console.log('Background: Deleting URL with ID:', request.id);
-    console.log('Background: Current URLs before delete:', capturedUrls);
+    console.log(
+      '%c 🗑 DELETE %c Removing URL with ID: ' + request.id,
+      'background: #FFE66D; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #FFE66D; padding: 2px 4px;'
+    );
     
     capturedUrls = capturedUrls.filter(u => u.id !== request.id);
     
-    console.log('Background: URLs after delete:', capturedUrls);
+    console.log(
+      '%c 🏅 %c ' + capturedUrls.length + ' URLs remaining',
+      'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #95E77E; padding: 2px 4px;'
+    );
     updateBadge(capturedUrls.length);
     sendResponse({ success: true, urls: capturedUrls });
   } else if (request.type === 'CLEAR_ALL') {
@@ -112,7 +137,12 @@ async function downloadVideo(m3u8Url, customFileName) {
     }
     
     const taskId = createResult.taskId;
-    console.log('任务已创建:', taskId, '文件名:', fileName);
+    console.log(
+      '%c 📦 DOWNLOAD %c Task created: ' + taskId + ' %c File: ' + fileName + '.mp4',
+      'background: #4ECDC4; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #4ECDC4; padding: 2px 4px;',
+      'color: #667eea; font-weight: bold;'
+    );
     
     // 步骤2: 轮询任务状态
     let taskStatus;
@@ -165,9 +195,17 @@ async function downloadVideo(m3u8Url, customFileName) {
       saveAs: true
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
-        console.error('下载失败:', chrome.runtime.lastError);
+        console.log(
+          '%c ☹️ ERROR %c Download failed: ' + chrome.runtime.lastError.message,
+          'background: #FF6B6B; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+          'color: #FF6B6B; padding: 2px 4px; font-weight: bold;'
+        );
       } else {
-        console.log('下载已开始，ID:', downloadId);
+        console.log(
+          '%c 🏅 SUCCESS %c Download started - ID: ' + downloadId,
+          'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+          'color: #95E77E; padding: 2px 4px;'
+        );
       }
     });
     
@@ -177,16 +215,28 @@ async function downloadVideo(m3u8Url, customFileName) {
         await fetch(`${baseUrl}/api/task/${taskId}`, {
           method: 'DELETE'
         });
-        console.log('任务已清理');
+        console.log(
+          '%c 🧼 CLEANUP %c Task cleaned successfully',
+          'background: #A8E6CF; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+          'color: #A8E6CF; padding: 2px 4px;'
+        );
       } catch (err) {
-        console.error('清理任务失败:', err);
+        console.log(
+          '%c ⚠️ WARNING %c Cleanup failed: ' + err.message,
+          'background: #FFE66D; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+          'color: #FFE66D; padding: 2px 4px;'
+        );
       }
     }, 5000);
     
     return { success: true, message: `下载已开始：${downloadFileName}` };
     
   } catch (error) {
-    console.error('下载失败:', error);
+    console.log(
+      '%c ☹️ ERROR %c Download failed: ' + error.message,
+      'background: #FF6B6B; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #FF6B6B; padding: 2px 4px; font-weight: bold;'
+    );
     return { success: false, error: error.message };
   } finally {
     isDownloading = false;
@@ -205,10 +255,46 @@ function updateBadge(count) {
 
 // 监听扩展安装或更新
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('M3U8Keeper 扩展已安装/更新');
+  console.log(
+    '%c 🎆 INSTALLED %c M3U8Keeper extension ready',
+    'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+    'color: #667eea; padding: 2px 4px; font-weight: bold;'
+  );
   // 初始化badge
   updateBadge(capturedUrls.length);
 });
 
-// 扩展启动时初始化badge
+// Helper functions
+function truncateUrl(url, maxLength = 60) {
+  if (url.length <= maxLength) return url;
+  const start = url.substring(0, 30);
+  const end = url.substring(url.length - 27);
+  return `${start}...${end}`;
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 'null' || bytes === null) return 'Unknown';
+  
+  const size = parseInt(bytes);
+  if (isNaN(size)) return 'Unknown';
+  
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let unitIndex = 0;
+  let fileSize = size;
+  
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
+  }
+  
+  return `${fileSize.toFixed(unitIndex > 0 ? 2 : 0)} ${units[unitIndex]}`;
+}
+
+// Initialize badge on extension startup
 updateBadge(capturedUrls.length);
+
+console.log(
+  '%c 🏅 %c Background service initialized',
+  'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+  'color: #95E77E; padding: 2px 4px;'
+);

@@ -391,7 +391,7 @@ body {
 }
 
 .ts-segment.downloaded::after {
-  content: '✓';
+  content: '🏅';
   color: white;
   font-size: 12px;
   font-weight: bold;
