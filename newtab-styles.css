@@ -221,6 +221,11 @@ body {
   margin-bottom: 8px;
 }
 
+.item-download-status.status-success .status-text,
+.item-download-status.status-error .status-text {
+  margin-bottom: 0;
+}
+
 .item-download-status .progress-bar {
   height: 6px;
   background: #e0e0e0;
