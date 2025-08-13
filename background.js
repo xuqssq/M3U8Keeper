@@ -27,7 +27,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ urls: capturedUrls });
   } else if (request.type === 'DELETE_URL') {
     // 删除指定的URL
+    console.log('Background: Deleting URL with ID:', request.id);
+    console.log('Background: Current URLs before delete:', capturedUrls);
+    
     capturedUrls = capturedUrls.filter(u => u.id !== request.id);
+    
+    console.log('Background: URLs after delete:', capturedUrls);
     updateBadge(capturedUrls.length);
     sendResponse({ success: true, urls: capturedUrls });
   } else if (request.type === 'CLEAR_ALL') {

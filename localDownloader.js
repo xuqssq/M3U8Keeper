@@ -196,9 +196,11 @@ class LocalM3U8Downloader {
 
       if (onProgress) {
         onProgress({
+          stage: 'downloading',
           current: i + 1,
           total,
           percent: Math.round(((i + 1) / total) * 100),
+          message: `正在下载视频片段... (${i + 1}/${total})`
         });
       }
     }
@@ -274,6 +276,8 @@ class LocalM3U8Downloader {
             stage: "downloading",
             message: `正在下载视频片段... (${progress.current}/${progress.total})`,
             percent: progress.percent,
+            current: progress.current,
+            total: progress.total
           });
         }
       });
@@ -361,9 +365,11 @@ class LocalM3U8DownloaderSimple {
       downloaded += chunk.length;
       if (onProgress) {
         onProgress({
+          stage: 'downloading',
           current: downloaded,
           total,
           percent: Math.round((downloaded / total) * 100),
+          message: `正在下载视频片段... (${downloaded}/${total})`
         });
       }
     }
@@ -402,6 +408,8 @@ class LocalM3U8DownloaderSimple {
             stage: "downloading",
             message: `正在下载视频片段... (${progress.current}/${progress.total})`,
             percent: progress.percent,
+            current: progress.current,
+            total: progress.total
           });
         }
       });

@@ -1,0 +1,417 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  font-size: 24px;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.url-count {
+  background: #e8f4f8;
+  color: #0066cc;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.url-list {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.empty-state p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+.empty-state .hint {
+  font-size: 14px;
+  color: #bbb;
+}
+
+.url-item {
+  padding: 20px 30px;
+  border-bottom: 1px solid #eef2f5;
+  transition: background-color 0.2s;
+}
+
+.url-item:hover {
+  background: #fafbfc;
+}
+
+.url-item:last-child {
+  border-bottom: none;
+}
+
+.url-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 8px;
+}
+
+.url-time {
+  color: #999;
+  font-size: 13px;
+}
+
+.url-tab {
+  background: #f0f3f6;
+  color: #666;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.url-text {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 12px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.url-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: #0066cc;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0052a3;
+}
+
+.btn-warning {
+  background: #f39c12;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #e67e22;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #229954;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #7f8c8d;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-copied {
+  background: #27ae60 !important;
+}
+
+.download-status {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 300px;
+  z-index: 1000;
+}
+
+.item-download-status {
+  margin-top: 12px;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s;
+}
+
+.item-download-status .status-text {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.item-download-status .progress-bar {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.item-download-status .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.item-download-status .progress-fill.local-download {
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.status-text {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-fill.local-download {
+  background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.progress-fill.server-download {
+  background: linear-gradient(90deg, #0066cc, #0052a3);
+}
+
+.download-status.status-success .status-text,
+.item-download-status.status-success .status-text {
+  color: #27ae60;
+}
+
+.download-status.status-error .status-text,
+.item-download-status.status-error .status-text {
+  color: #e74c3c;
+}
+
+.download-status.status-processing .status-text,
+.item-download-status.status-processing .status-text {
+  color: #0066cc;
+}
+
+.download-status.local-download.status-processing .status-text,
+.item-download-status.local-download.status-processing .status-text {
+  color: #f39c12;
+}
+
+.item-download-status.status-success {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.item-download-status.status-error {
+  background: #ffebee;
+  border-color: #e74c3c;
+}
+
+.item-download-status.status-processing {
+  background: #e3f2fd;
+  border-color: #0066cc;
+}
+
+.item-download-status.local-download.status-processing {
+  background: #fff3e0;
+  border-color: #f39c12;
+}
+
+.ts-progress-container {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.ts-progress-title {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.ts-segments-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ts-segment {
+  width: 20px;
+  height: 20px;
+  background: rgba(231, 76, 60, 0.8);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ts-segment:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.ts-segment.downloaded {
+  background: #f39c12;
+  animation: segmentPulse 0.3s ease;
+}
+
+.ts-segment.downloaded::after {
+  content: '✓';
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+@keyframes segmentPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  .header {
+    padding: 15px 20px;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .header h1 {
+    font-size: 20px;
+  }
+  
+  .url-item {
+    padding: 15px 20px;
+  }
+  
+  .url-buttons {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+  
+  .download-status {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+  }
+  
+  .ts-segment {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .ts-segment.downloaded::after {
+    font-size: 10px;
+  }
+}
