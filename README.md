@@ -285,7 +285,7 @@ graph TD
 1. Fork 项目
 2. 克隆到本地：
    ```bash
-   git clone https://github.com/yourusername/M3U8Keeper.git
+   git clone https://github.com/xuqssq/M3U8Keeper.git
    cd M3U8Keeper
    ```
 3. 在 Chrome 中加载未打包的扩展
