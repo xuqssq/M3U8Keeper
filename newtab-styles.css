@@ -213,6 +213,7 @@ body {
   border-radius: 6px;
   border: 1px solid #e9ecef;
   transition: all 0.3s;
+  overflow: hidden;
 }
 
 .item-download-status .status-text {

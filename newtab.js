@@ -13,7 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'DOWNLOAD_PROGRESS') {
-      updateDownloadProgress(request.progress);
+      // 更新当前下载项目的进度
+      if (window.currentDownloadItemId) {
+        updateItemDownloadProgress(window.currentDownloadItemId, request.progress, 'server');
+      }
     } else if (request.type === 'URL_UPDATED') {
       loadUrls();
     }
@@ -171,12 +174,16 @@ function downloadVideo(item) {
   isDownloading = true;
   updateItemDownloadStatus(item.id, '正在创建下载任务...', 'processing', 'server');
   
+  // 保存当前下载的item ID，用于接收进度更新
+  window.currentDownloadItemId = item.id;
+  
   const fileName = getSafeFileName(item.tabTitle);
   
   chrome.runtime.sendMessage({
     type: 'DOWNLOAD_VIDEO',
     url: item.url,
-    fileName: fileName
+    fileName: fileName,
+    itemId: item.id  // 传递item ID给background
   }, (response) => {
     if (response.success) {
       updateItemDownloadStatus(item.id, response.message, 'success', 'server');
@@ -185,11 +192,15 @@ function downloadVideo(item) {
     }
     
     isDownloading = false;
+    window.currentDownloadItemId = null;
     
     setTimeout(() => {
       const statusElement = document.getElementById(`download-status-${item.id}`);
       if (statusElement) {
         statusElement.style.display = 'none';
+        statusElement.innerHTML = '';  // 清空内容
+        statusElement.style.marginTop = '0';  // 移除上边距
+        statusElement.style.padding = '0';  // 移除内边距
       }
     }, 3000);
   });
@@ -278,11 +289,23 @@ function updateItemDownloadStatus(itemId, message, type = 'info', downloadType =
   const statusElement = document.getElementById(`download-status-${itemId}`);
   if (!statusElement) return;
   
+  // 如果内容被清空了，重新创建
+  if (!statusElement.querySelector('.status-text')) {
+    statusElement.innerHTML = `
+      <span class="status-text"></span>
+      <div class="progress-bar" style="display: none">
+        <div class="progress-fill"></div>
+      </div>
+    `;
+  }
+  
   const statusText = statusElement.querySelector('.status-text');
   const progressBar = statusElement.querySelector('.progress-bar');
   const progressFill = statusElement.querySelector('.progress-fill');
   
   statusElement.style.display = 'block';
+  statusElement.style.marginTop = '12px';  // 恢复边距
+  statusElement.style.padding = '12px 15px';  // 恢复内边距
   statusText.textContent = message;
   
   statusElement.className = 'item-download-status';
@@ -317,6 +340,12 @@ function updateItemDownloadStatus(itemId, message, type = 'info', downloadType =
 function updateItemDownloadProgress(itemId, progress, downloadType = 'server') {
   const statusElement = document.getElementById(`download-status-${itemId}`);
   if (!statusElement) return;
+  
+  // 如果内容被清空了，先恢复
+  if (!statusElement.querySelector('.progress-fill')) {
+    updateItemDownloadStatus(itemId, `正在处理视频... ${progress}%`, 'processing', downloadType);
+    return;
+  }
   
   const progressFill = statusElement.querySelector('.progress-fill');
   if (progressFill) {
@@ -372,7 +401,11 @@ async function localDownloadVideo(item) {
     
     try {
       await ffmpegDownloader.download(item.url, fileName, (progress) => {
-        if (progress.stage === 'downloading') {
+        console.log('Local download progress:', progress);  // 调试信息
+        
+        if (progress.stage === 'parsing') {
+          updateItemDownloadStatus(item.id, progress.message, 'processing', 'local');
+        } else if (progress.stage === 'downloading') {
           // 处理ts切片下载进度
           if (progress.current && progress.total) {
             // 初始化ts切片显示
@@ -386,7 +419,13 @@ async function localDownloadVideo(item) {
           
           if (progress.percent) {
             updateItemDownloadProgress(item.id, progress.percent, 'local');
+          } else if (progress.message) {
+            updateItemDownloadStatus(item.id, progress.message, 'processing', 'local');
           }
+        } else if (progress.stage === 'converting') {
+          updateItemDownloadStatus(item.id, progress.message, 'processing', 'local');
+        } else if (progress.stage === 'saving') {
+          updateItemDownloadStatus(item.id, progress.message, 'processing', 'local');
         } else if (progress.stage === 'completed') {
           // 下载完成，隐藏ts进度
           setTimeout(() => {
@@ -396,7 +435,7 @@ async function localDownloadVideo(item) {
           }, 3000);
           updateItemDownloadStatus(item.id, progress.message, 'success', 'local');
         } else {
-          updateItemDownloadStatus(item.id, progress.message, 'processing', 'local');
+          updateItemDownloadStatus(item.id, progress.message || '处理中...', 'processing', 'local');
         }
       });
     } catch (ffmpegError) {
@@ -440,6 +479,9 @@ async function localDownloadVideo(item) {
       const statusElement = document.getElementById(`download-status-${item.id}`);
       if (statusElement) {
         statusElement.style.display = 'none';
+        statusElement.innerHTML = '';  // 清空内容
+        statusElement.style.marginTop = '0';  // 移除上边距
+        statusElement.style.padding = '0';  // 移除内边距
       }
     }, 3000);
     
@@ -456,6 +498,9 @@ async function localDownloadVideo(item) {
       const statusElement = document.getElementById(`download-status-${item.id}`);
       if (statusElement) {
         statusElement.style.display = 'none';
+        statusElement.innerHTML = '';  // 清空内容
+        statusElement.style.marginTop = '0';  // 移除上边距
+        statusElement.style.padding = '0';  // 移除内边距
       }
     }, 5000);
   } finally {

@@ -128,11 +128,21 @@ async function downloadVideo(m3u8Url, customFileName) {
       } else if (taskStatus.status === 'failed') {
         throw new Error(taskStatus.error || '处理失败');
       } else if (taskStatus.status === 'processing') {
-        // 可以通过消息通知popup进度
+        // 发送进度给所有打开的标签页
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, {
+              type: 'DOWNLOAD_PROGRESS',
+              progress: taskStatus.progress || 0
+            }).catch(() => {}); // 忽略错误
+          });
+        });
+        
+        // 也尝试发送给runtime（用于newtab页面）
         chrome.runtime.sendMessage({
           type: 'DOWNLOAD_PROGRESS',
           progress: taskStatus.progress || 0
-        }).catch(() => {}); // 忽略错误（popup可能已关闭）
+        }).catch(() => {}); // 忽略错误
       }
       
       attempts++;
