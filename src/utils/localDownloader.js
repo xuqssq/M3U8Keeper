@@ -186,7 +186,7 @@ class LocalM3U8Downloader {
   }
 
   // 下载所有ts片段（支持并发下载）
-  async downloadAllSegments(onProgress, concurrency = 5) {
+  async downloadAllSegments(onProgress, concurrency = 10) {
     const total = this.tsSegments.length;
     const allSegments = new Array(total);
     let downloaded = 0;
@@ -248,8 +248,10 @@ class LocalM3U8Downloader {
     // 写入ts文件
     this.ffmpeg.FS("writeFile", inputFileName, tsData);
 
-    // 执行转换（直接 copy）
+    // 执行转换（使用 -f mpegts 强制指定输入格式为 TS）
     await this.ffmpeg.run(
+      "-f",
+      "mpegts",
       "-i",
       inputFileName,
       "-c",
@@ -373,7 +375,7 @@ class LocalM3U8DownloaderSimple {
     return fetchSegmentData(segment, this.key, this.iv, true);
   }
 
-  async downloadAllSegments(onProgress, concurrency = 5) {
+  async downloadAllSegments(onProgress, concurrency = 10) {
     const total = this.tsSegments.length;
     const allSegments = new Array(total);
     let downloaded = 0;
