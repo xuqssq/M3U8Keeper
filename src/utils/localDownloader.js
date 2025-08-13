@@ -186,7 +186,7 @@ class LocalM3U8Downloader {
   }
 
   // 下载所有ts片段（支持并发下载）
-  async downloadAllSegments(onProgress, concurrency = 20) {
+  async downloadAllSegments(onProgress, concurrency = 12) {
     const total = this.tsSegments.length;
     const allSegments = new Array(total);
     let downloaded = 0;
@@ -375,7 +375,7 @@ class LocalM3U8DownloaderSimple {
     return fetchSegmentData(segment, this.key, this.iv, true);
   }
 
-  async downloadAllSegments(onProgress, concurrency = 20) {
+  async downloadAllSegments(onProgress, concurrency = 12) {
     const total = this.tsSegments.length;
     const allSegments = new Array(total);
     let downloaded = 0;
