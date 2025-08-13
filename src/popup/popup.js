@@ -71,6 +71,25 @@ function renderUrlList() {
   });
 }
 
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 'null' || bytes === null) return '';
+  
+  const size = parseInt(bytes);
+  if (isNaN(size)) return '';
+  
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let unitIndex = 0;
+  let fileSize = size;
+  
+  while (fileSize >= 1024 && unitIndex < units.length - 1) {
+    fileSize /= 1024;
+    unitIndex++;
+  }
+  
+  return `${fileSize.toFixed(unitIndex > 0 ? 2 : 0)} ${units[unitIndex]}`;
+}
+
 // 创建URL项目元素
 function createUrlItem(item) {
   const urlItem = document.createElement('div');
@@ -79,10 +98,22 @@ function createUrlItem(item) {
   // 时间和标签页信息
   const infoDiv = document.createElement('div');
   infoDiv.className = 'url-info';
-  infoDiv.innerHTML = `
-    <span class="url-time">${item.time}</span>
-    ${item.tabTitle ? `<span class="url-tab" title="${item.tabTitle}">${truncateText(item.tabTitle, 30)}</span>` : ''}
-  `;
+  
+  // 构建信息HTML
+  let infoHtml = `<span class="url-time">${item.time}</span>`;
+  
+  // 添加文件大小信息
+  const fileSize = formatFileSize(item.contentLength);
+  if (fileSize) {
+    infoHtml += `<span class="url-size" style="margin-left: 10px; color: #666;">${fileSize}</span>`;
+  }
+  
+  // 添加标签页标题
+  if (item.tabTitle) {
+    infoHtml += `<span class="url-tab" title="${item.tabTitle}" style="margin-left: 10px;">${truncateText(item.tabTitle, 30)}</span>`;
+  }
+  
+  infoDiv.innerHTML = infoHtml;
   
   // URL文本
   const urlText = document.createElement('div');

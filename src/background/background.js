@@ -13,13 +13,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         time: new Date().toLocaleTimeString(),
         id: Date.now(),
         tabId: sender.tab?.id,
-        tabTitle: sender.tab?.title || ''
+        tabTitle: sender.tab?.title || '',
+        contentLength: request.contentLength || null,
+        contentType: request.contentType || null
       });
       
       // 更新badge显示数量
       updateBadge(capturedUrls.length);
       
-      console.log('捕获到新URL:', request.url);
+      console.log('捕获到新URL:', request.url, '大小:', request.contentLength);
     }
     sendResponse({ success: true });
   } else if (request.type === 'GET_URLS') {

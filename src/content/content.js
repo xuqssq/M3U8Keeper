@@ -35,7 +35,7 @@
   }
 
   // 向background script发送捕获的URL
-  function sendUrlToBackground(url, responseText) {
+  function sendUrlToBackground(url, responseText, contentLength, contentType) {
     // 首先检查URL是否匹配
     if (shouldCaptureUrl(url)) {
       //匹配也要检测是否包含m3u8特征
@@ -44,6 +44,8 @@
           {
             type: "URL_CAPTURED",
             url: url,
+            contentLength: contentLength,
+            contentType: contentType,
           },
           (response) => {
             if (response && response.success) {
@@ -63,6 +65,8 @@
           type: "URL_CAPTURED",
           url: url,
           isM3U8Content: true,
+          contentLength: contentLength,
+          contentType: contentType,
         },
         (response) => {
           if (response && response.success) {
@@ -87,9 +91,14 @@
     if (event.source !== window) return;
 
     if (event.data && event.data.type === "URL_INTERCEPTED") {
-      // 传递URL和响应内容
+      // 传递URL、响应内容和头信息
       const url = event.data.responseURL || event.data.url;
-      sendUrlToBackground(url, event.data.responseText);
+      sendUrlToBackground(
+        url, 
+        event.data.responseText,
+        event.data.contentLength,
+        event.data.contentType
+      );
     }
   });
 

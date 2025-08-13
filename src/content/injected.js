@@ -20,13 +20,19 @@
       try {
         // 获取响应内容
         const responseText = xhr.responseText;
-        // 发送消息到content script，包含响应内容
+        // 获取响应头信息
+        const contentLength = xhr.getResponseHeader('content-length');
+        const contentType = xhr.getResponseHeader('content-type');
+        
+        // 发送消息到content script，包含响应内容和头信息
         window.postMessage({
           type: 'URL_INTERCEPTED',
           url: url,
           method: 'xhr',
           responseText: responseText,
-          responseURL: xhr.responseURL
+          responseURL: xhr.responseURL,
+          contentLength: contentLength,
+          contentType: contentType
         }, '*');
       } catch (e) {
         // 如果无法获取响应内容，仍然发送URL
@@ -54,13 +60,19 @@
         const clonedResponse = response.clone();
         const responseText = await clonedResponse.text();
         
-        // 发送消息到content script，包含响应内容
+        // 获取响应头信息
+        const contentLength = response.headers.get('content-length');
+        const contentType = response.headers.get('content-type');
+        
+        // 发送消息到content script，包含响应内容和头信息
         window.postMessage({
           type: 'URL_INTERCEPTED',
           url: urlString,
           method: 'fetch',
           responseText: responseText,
-          responseURL: response.url
+          responseURL: response.url,
+          contentLength: contentLength,
+          contentType: contentType
         }, '*');
       } catch (e) {
         // 如果无法获取响应内容，仍然发送URL
