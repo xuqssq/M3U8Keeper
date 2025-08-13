@@ -29,7 +29,7 @@ M3U8 Keeper 是一款功能强大的 Chrome 浏览器扩展，专门用于捕获
 
 1. **下载扩展文件**
    ```bash
-   git clone https://github.com/yourusername/M3U8Keeper.git
+   git clone https://github.com/xuqssq/download-m3u8-chrome-ext.git
    ```
 
 2. **打开 Chrome 扩展管理页面**
