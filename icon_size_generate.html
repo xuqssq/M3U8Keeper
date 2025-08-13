@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="./src/assets/favicon.ico">
+  <title>Icon Generator - M3U8 Keeper</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #2c3e50;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .upload-section {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .upload-area {
+      border: 2px dashed #0066cc;
+      border-radius: 8px;
+      padding: 40px 20px;
+      background: #f8f9fa;
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .upload-area:hover {
+      background: #e3f2fd;
+      border-color: #0052a3;
+    }
+
+    .upload-area.dragging {
+      background: #e3f2fd;
+      border-color: #0052a3;
+    }
+
+    .upload-area input[type="file"] {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: #0066cc;
+      margin-bottom: 15px;
+    }
+
+    .upload-text {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .upload-hint {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .preview-section {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .preview-section.active {
+      display: block;
+    }
+
+    .original-preview {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #eef2f5;
+    }
+
+    .original-preview h3 {
+      font-size: 16px;
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .original-preview img {
+      max-width: 200px;
+      max-height: 200px;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .icons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .icon-box {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .icon-box:hover {
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .icon-canvas-wrapper {
+      display: inline-block;
+      padding: 15px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border: 1px solid #e9ecef;
+    }
+
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    .icon-info {
+      margin-bottom: 15px;
+    }
+
+    .icon-size {
+      font-size: 14px;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .icon-filename {
+      font-size: 12px;
+      color: #999;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      outline: none;
+      text-decoration: none;
+      display: inline-block;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: #0066cc;
+    }
+
+    .btn-primary:hover {
+      background: #0052a3;
+    }
+
+    .btn-success {
+      background: #27ae60;
+    }
+
+    .btn-success:hover {
+      background: #229954;
+    }
+
+    .btn-warning {
+      background: #f39c12;
+    }
+
+    .btn-warning:hover {
+      background: #e67e22;
+    }
+
+    .export-all-section {
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #eef2f5;
+    }
+
+    .export-all-btn, .export-ico-btn, .reset-btn {
+      padding: 12px 32px;
+      font-size: 16px;
+      margin: 0 5px;
+    }
+
+    .export-ico-btn {
+      background: #9b59b6;
+    }
+
+    .export-ico-btn:hover {
+      background: #8e44ad;
+    }
+
+    .reset-btn {
+      background: #95a5a6;
+    }
+
+    .reset-btn:hover {
+      background: #7f8c8d;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .header {
+        padding: 15px 20px;
+      }
+      
+      .icons-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎨 Icon Generator</h1>
+      <p>为 M3U8 Keeper 生成指定尺寸的预览图</p>
+    </div>
+
+    <div class="upload-section">
+      <div class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">点击或拖拽图片到此处上传</div>
+        <div class="upload-hint">支持 PNG、JPG、SVG 等格式，建议使用方形图片</div>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+        <h3 style="font-size: 16px; color: #2c3e50; margin-bottom: 15px; font-weight: 600;">自定义尺寸</h3>
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;">
+          <input type="number" id="customWidth" placeholder="宽度" min="1" max="1024" 
+                 style="width: 100px; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px;">
+          <span style="color: #666; font-size: 14px;">×</span>
+          <input type="number" id="customHeight" placeholder="高度" min="1" max="1024" 
+                 style="width: 100px; padding: 8px 12px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px;">
+          <button id="addCustomSize" class="btn btn-primary" style="padding: 8px 20px;">添加尺寸</button>
+        </div>
+        <div style="margin-top: 10px; text-align: center; font-size: 12px; color: #999;">
+          输入自定义宽高（1-1024像素），点击添加尺寸后将在下方生成对应的裁剪预览
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-section" id="previewSection">
+      <div class="original-preview">
+        <h3>原始图片</h3>
+        <img id="originalImage" alt="Original">
+      </div>
+
+      <div class="icons-grid" id="iconsGrid">
+        <div class="icon-box" data-width="16" data-height="16">
+          <div class="icon-canvas-wrapper">
+            <canvas id="icon16x16" width="16" height="16"></canvas>
+          </div>
+          <div class="icon-info">
+            <div class="icon-size">16 × 16</div>
+            <div class="icon-filename">icon16x16.png</div>
+          </div>
+          <button class="btn btn-primary download-btn" data-width="16" data-height="16">下载</button>
+        </div>
+
+        <div class="icon-box" data-width="32" data-height="32">
+          <div class="icon-canvas-wrapper">
+            <canvas id="icon32x32" width="32" height="32"></canvas>
+          </div>
+          <div class="icon-info">
+            <div class="icon-size">32 × 32</div>
+            <div class="icon-filename">icon32x32.png</div>
+          </div>
+          <button class="btn btn-primary download-btn" data-width="32" data-height="32">下载</button>
+        </div>
+
+        <div class="icon-box" data-width="48" data-height="48">
+          <div class="icon-canvas-wrapper">
+            <canvas id="icon48x48" width="48" height="48"></canvas>
+          </div>
+          <div class="icon-info">
+            <div class="icon-size">48 × 48</div>
+            <div class="icon-filename">icon48x48.png</div>
+          </div>
+          <button class="btn btn-primary download-btn" data-width="48" data-height="48">下载</button>
+        </div>
+
+        <div class="icon-box" data-width="128" data-height="128">
+          <div class="icon-canvas-wrapper">
+            <canvas id="icon128x128" width="128" height="128"></canvas>
+          </div>
+          <div class="icon-info">
+            <div class="icon-size">128 × 128</div>
+            <div class="icon-filename">icon128x128.png</div>
+          </div>
+          <button class="btn btn-primary download-btn" data-width="128" data-height="128">下载</button>
+        </div>
+      </div>
+
+      <div class="export-all-section">
+        <button class="btn btn-success export-all-btn" id="exportAllBtn">
+          📦 导出所有尺寸
+        </button>
+        <button class="btn export-ico-btn" id="exportIcoBtn">
+          🌐 导出网站 ICO
+        </button>
+        <button class="btn reset-btn" id="resetBtn">
+          🔄 重新选择图片
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewSection = document.getElementById('previewSection');
+    const originalImage = document.getElementById('originalImage');
+    const exportAllBtn = document.getElementById('exportAllBtn');
+    const exportIcoBtn = document.getElementById('exportIcoBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const customWidth = document.getElementById('customWidth');
+    const customHeight = document.getElementById('customHeight');
+    const addCustomSizeBtn = document.getElementById('addCustomSize');
+    const iconsGrid = document.getElementById('iconsGrid');
+    
+    let uploadedImage = null;
+    let customSizes = [];
+
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // 文件选择
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleImageFile(file);
+      }
+    });
+
+    // 拖拽上传
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragging');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragging');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragging');
+      
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleImageFile(file);
+      }
+    });
+
+    // 处理图片文件
+    function handleImageFile(file) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          uploadedImage = img;
+          originalImage.src = e.target.result;
+          previewSection.classList.add('active');
+          generateIcons();
+        };
+        img.src = e.target.result;
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    // 生成所有尺寸的图标
+    function generateIcons() {
+      if (!uploadedImage) return;
+      
+      // 生成所有图标框中的图标
+      document.querySelectorAll('.icon-box').forEach(box => {
+        const width = parseInt(box.dataset.width);
+        const height = parseInt(box.dataset.height);
+        const canvas = box.querySelector('canvas');
+        
+        if (canvas) {
+          generateIcon(canvas, width, height);
+        }
+      });
+    }
+    
+    // 生成单个图标
+    function generateIcon(canvas, width, height) {
+      if (!uploadedImage) return;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height);
+      
+      // 使用高质量缩放
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // 计算缩放比例，保持宽高比
+      const scale = Math.min(width / uploadedImage.width, height / uploadedImage.height);
+      const scaledWidth = uploadedImage.width * scale;
+      const scaledHeight = uploadedImage.height * scale;
+      
+      // 居中绘制
+      const x = (width - scaledWidth) / 2;
+      const y = (height - scaledHeight) / 2;
+      
+      // 绘制图像
+      ctx.drawImage(uploadedImage, x, y, scaledWidth, scaledHeight);
+    }
+    
+    // 添加自定义尺寸
+    addCustomSizeBtn.addEventListener('click', () => {
+      const width = parseInt(customWidth.value);
+      const height = parseInt(customHeight.value);
+      
+      if (!width || !height || width < 1 || width > 1024 || height < 1 || height > 1024) {
+        alert('请输入有效的宽高值（1-1024像素）');
+        return;
+      }
+      
+      // 检查是否已存在相同尺寸
+      const existingBox = document.querySelector(`.icon-box[data-width="${width}"][data-height="${height}"]`);
+      if (existingBox) {
+        alert('该尺寸已存在');
+        return;
+      }
+      
+      // 创建新的图标框
+      const iconBox = document.createElement('div');
+      iconBox.className = 'icon-box';
+      iconBox.dataset.width = width;
+      iconBox.dataset.height = height;
+      
+      iconBox.innerHTML = `
+        <div class="icon-canvas-wrapper">
+          <canvas id="icon${width}x${height}" width="${width}" height="${height}"></canvas>
+        </div>
+        <div class="icon-info">
+          <div class="icon-size">${width} × ${height}</div>
+          <div class="icon-filename">icon${width}x${height}.png</div>
+        </div>
+        <button class="btn btn-primary download-btn" data-width="${width}" data-height="${height}">下载</button>
+        <button class="btn btn-warning remove-btn" data-width="${width}" data-height="${height}" style="margin-left: 5px; padding: 8px 12px; font-size: 14px;">删除</button>
+      `;
+      
+      // 添加到网格
+      iconsGrid.appendChild(iconBox);
+      
+      // 如果已有图片，生成图标
+      if (uploadedImage) {
+        const canvas = iconBox.querySelector('canvas');
+        generateIcon(canvas, width, height);
+      }
+      
+      // 添加下载事件
+      const downloadBtn = iconBox.querySelector('.download-btn');
+      downloadBtn.addEventListener('click', () => {
+        downloadIcon(width, height);
+      });
+      
+      // 添加删除事件
+      const removeBtn = iconBox.querySelector('.remove-btn');
+      removeBtn.addEventListener('click', () => {
+        iconBox.remove();
+      });
+      
+      // 清空输入框
+      customWidth.value = '';
+      customHeight.value = '';
+      
+      // 记录自定义尺寸
+      customSizes.push({width, height});
+    });
+    
+    // 下载图标函数
+    function downloadIcon(width, height) {
+      const canvas = document.getElementById(`icon${width}x${height}`);
+      if (!canvas) return;
+      
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `icon${width}x${height}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // 下载单个图标（初始按钮）
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('download-btn')) {
+        const width = e.target.dataset.width;
+        const height = e.target.dataset.height;
+        downloadIcon(width, height);
+      }
+    });
+
+    // 导出所有尺寸
+    exportAllBtn.addEventListener('click', async () => {
+      const boxes = document.querySelectorAll('.icon-box');
+      
+      for (const box of boxes) {
+        const width = box.dataset.width;
+        const height = box.dataset.height;
+        const canvas = document.getElementById(`icon${width}x${height}`);
+        
+        if (canvas) {
+          await new Promise(resolve => {
+            canvas.toBlob((blob) => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `icon${width}x${height}.png`;
+              a.click();
+              URL.revokeObjectURL(url);
+              
+              // 延迟一下，避免浏览器阻止多个下载
+              setTimeout(resolve, 100);
+            });
+          });
+        }
+      }
+      
+      // 提示完成
+      const originalText = exportAllBtn.textContent;
+      exportAllBtn.textContent = '✅ 已导出所有图标！';
+      exportAllBtn.style.background = '#27ae60';
+      
+      setTimeout(() => {
+        exportAllBtn.textContent = originalText;
+        exportAllBtn.style.background = '';
+      }, 2000);
+    });
+
+    // 导出 ICO 文件
+    exportIcoBtn.addEventListener('click', () => {
+      if (!uploadedImage) return;
+      
+      // 创建 ICO 文件
+      // ICO 文件格式包含多个尺寸的图标
+      const sizes = [16, 32, 48];
+      const icoImages = [];
+      
+      // 收集所有尺寸的图片数据
+      sizes.forEach(size => {
+        const canvas = document.getElementById(`icon${size}x${size}`);
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.getImageData(0, 0, size, size);
+          icoImages.push({
+            width: size,
+            height: size,
+            data: imageData
+          });
+        }
+      });
+      
+      // 创建 ICO 文件二进制数据
+      const icoData = createICO(icoImages);
+      
+      // 下载 ICO 文件
+      const blob = new Blob([icoData], { type: 'image/x-icon' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'favicon.ico';
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      // 提示完成
+      const originalText = exportIcoBtn.textContent;
+      exportIcoBtn.textContent = '✅ 已导出 ICO！';
+      exportIcoBtn.style.background = '#8e44ad';
+      
+      setTimeout(() => {
+        exportIcoBtn.textContent = originalText;
+        exportIcoBtn.style.background = '';
+      }, 2000);
+    });
+
+    // 创建 ICO 文件
+    function createICO(images) {
+      // ICO 文件头
+      const iconDir = new ArrayBuffer(6);
+      const iconDirView = new DataView(iconDir);
+      iconDirView.setUint16(0, 0, true); // 保留字段
+      iconDirView.setUint16(2, 1, true); // 类型：1 = ICO
+      iconDirView.setUint16(4, images.length, true); // 图像数量
+      
+      // 计算每个图像的数据
+      const entries = [];
+      const imageDataArray = [];
+      let offset = 6 + (16 * images.length); // 文件头 + 目录项
+      
+      images.forEach(img => {
+        // 创建 PNG 数据
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.putImageData(img.data, 0, 0);
+        
+        // 转换为 PNG Blob
+        const dataURL = canvas.toDataURL('image/png');
+        const base64 = dataURL.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        
+        // 创建目录项
+        const entry = new ArrayBuffer(16);
+        const entryView = new DataView(entry);
+        entryView.setUint8(0, img.width === 256 ? 0 : img.width); // 宽度
+        entryView.setUint8(1, img.height === 256 ? 0 : img.height); // 高度
+        entryView.setUint8(2, 0); // 调色板颜色数
+        entryView.setUint8(3, 0); // 保留
+        entryView.setUint16(4, 1, true); // 颜色平面数
+        entryView.setUint16(6, 32, true); // 每像素位数
+        entryView.setUint32(8, bytes.length, true); // 图像数据大小
+        entryView.setUint32(12, offset, true); // 图像数据偏移
+        
+        entries.push(entry);
+        imageDataArray.push(bytes);
+        offset += bytes.length;
+      });
+      
+      // 合并所有数据
+      const totalSize = 6 + (16 * images.length) + imageDataArray.reduce((sum, arr) => sum + arr.length, 0);
+      const icoFile = new Uint8Array(totalSize);
+      let pos = 0;
+      
+      // 写入文件头
+      icoFile.set(new Uint8Array(iconDir), pos);
+      pos += 6;
+      
+      // 写入目录项
+      entries.forEach(entry => {
+        icoFile.set(new Uint8Array(entry), pos);
+        pos += 16;
+      });
+      
+      // 写入图像数据
+      imageDataArray.forEach(data => {
+        icoFile.set(data, pos);
+        pos += data.length;
+      });
+      
+      return icoFile;
+    }
+
+    // 重置
+    resetBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      uploadedImage = null;
+      previewSection.classList.remove('active');
+      originalImage.src = '';
+      
+      // 清空所有画布
+      document.querySelectorAll('canvas').forEach(canvas => {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      });
+      
+      // 移除所有自定义尺寸
+      customSizes.forEach(({width, height}) => {
+        const box = document.querySelector(`.icon-box[data-width="${width}"][data-height="${height}"]`);
+        if (box && !['16', '32', '48', '128'].includes(width.toString()) || width !== height) {
+          box.remove();
+        }
+      });
+      customSizes = [];
+    });
+  </script>
+</body>
+</html>
