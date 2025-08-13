@@ -109,6 +109,6 @@ function truncateText(text, maxLength) {
 
 // 打开新标签页
 function openNewtab() {
-  chrome.tabs.create({ url: 'newtab.html' });
+  chrome.tabs.create({ url: chrome.runtime.getURL('src/newtab/newtab.html') });
 }
 

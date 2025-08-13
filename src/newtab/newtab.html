@@ -3,18 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>URL Catcher</title>
-    <link rel="stylesheet" href="styles.css" />
+    <title>M3U8 Keeper</title>
+    <link rel="stylesheet" href="newtab-styles.css" />
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>URL Catcher Lists</h1>
+        <h1>M3U8 Keeper</h1>
         <div class="header-buttons">
           <span id="urlCount" class="url-count">0 个URL</span>
-          <button id="downloadBtn" class="btn btn-primary" title="下载管理">
-            下载
-          </button>
           <button id="clearAll" class="btn btn-danger" title="清空所有">
             清空
           </button>
@@ -28,8 +25,17 @@
         </div>
       </div>
 
+      <div id="downloadStatus" class="download-status" style="display: none">
+        <span class="status-text"></span>
+        <div class="progress-bar" style="display: none">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
     </div>
 
-    <script src="popup.js"></script>
+    <script src="../../lib/ffmpeg.min.js"></script>
+    <script src="../../lib/ffmpeg-core.js"></script>
+    <script src="../utils/localDownloader.js"></script>
+    <script src="newtab.js"></script>
   </body>
 </html>

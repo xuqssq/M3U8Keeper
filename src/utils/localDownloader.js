@@ -1,7 +1,7 @@
 const { createFFmpeg } = FFmpeg;
 
 const ffmpeg = createFFmpeg({
-  corePath: chrome.runtime.getURL("lib/ffmpeg-core.js"),
+  corePath: chrome.runtime.getURL("../../lib/ffmpeg-core.js"),
   log: true,
   mainName: "main",
 });

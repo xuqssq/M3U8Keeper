@@ -25,7 +25,7 @@
   
   // 创建一个独立的脚本文件来注入
   const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('injected.js');
+  script.src = chrome.runtime.getURL('src/content/injected.js');
   script.onload = function() {
     this.remove();
   };
