@@ -142,12 +142,13 @@ function concatUint8Arrays(chunks) {
 
 // 本地下载器 - 使用全局 ffmpeg，将 TS 合并并转换为 MP4
 class LocalM3U8Downloader {
-  constructor() {
+  constructor(options = {}) {
     this.ffmpeg = ffmpeg; // 复用已创建的全局实例
     this.tsSegments = [];
     this.key = null;
     this.iv = null;
     this.isDownloading = false;
+    this.concurrency = options.concurrency || 10; // 默认10个并发
   }
 
   // 解析m3u8文件
@@ -184,27 +185,54 @@ class LocalM3U8Downloader {
     return fetchSegmentData(segment, this.key, this.iv, false);
   }
 
-  // 下载所有ts片段（顺序下载，便于展示准确进度）
-  async downloadAllSegments(onProgress) {
-    const allSegments = [];
+  // 下载所有ts片段（支持并发下载）
+  async downloadAllSegments(onProgress, concurrency = 5) {
     const total = this.tsSegments.length;
-
-    for (let i = 0; i < total; i++) {
-      const segment = this.tsSegments[i];
-      const data = await this.downloadSegment(segment);
-      allSegments.push(data);
-
-      if (onProgress) {
-        onProgress({
-          stage: 'downloading',
-          current: i + 1,
-          total,
-          percent: Math.round(((i + 1) / total) * 100),
-          message: `正在下载视频片段... (${i + 1}/${total})`
-        });
+    const allSegments = new Array(total);
+    let downloaded = 0;
+    let activeDownloads = 0;
+    let currentIndex = 0;
+    
+    // 创建下载队列
+    const downloadQueue = async () => {
+      while (currentIndex < total) {
+        const index = currentIndex++;
+        const segment = this.tsSegments[index];
+        
+        activeDownloads++;
+        try {
+          const data = await this.downloadSegment(segment);
+          allSegments[index] = data;
+          downloaded++;
+          
+          if (onProgress) {
+            onProgress({
+              stage: 'downloading',
+              current: downloaded,
+              total,
+              percent: Math.round((downloaded / total) * 100),
+              message: `正在下载视频片段... (${downloaded}/${total})`
+            });
+          }
+        } catch (error) {
+          console.error(`下载片段 ${index} 失败:`, error);
+          throw error;
+        } finally {
+          activeDownloads--;
+        }
       }
+    };
+    
+    // 启动并发下载
+    const workers = [];
+    for (let i = 0; i < Math.min(concurrency, total); i++) {
+      workers.push(downloadQueue());
     }
-
+    
+    // 等待所有下载完成
+    await Promise.all(workers);
+    
+    // 合并所有片段
     return concatUint8Arrays(allSegments);
   }
 
@@ -280,7 +308,7 @@ class LocalM3U8Downloader {
             total: progress.total
           });
         }
-      });
+      }, this.concurrency);
 
       // 3. 转换为MP4
       if (onProgress)
@@ -309,11 +337,12 @@ class LocalM3U8Downloader {
 
 // 直接合并并保存 .ts
 class LocalM3U8DownloaderSimple {
-  constructor() {
+  constructor(options = {}) {
     this.tsSegments = [];
     this.key = null;
     this.iv = null;
     this.isDownloading = false;
+    this.concurrency = options.concurrency || 10; // 默认10个并发
   }
 
   async parseM3U8(m3u8Url) {
@@ -344,36 +373,53 @@ class LocalM3U8DownloaderSimple {
     return fetchSegmentData(segment, this.key, this.iv, true);
   }
 
-  async downloadAllSegments(onProgress) {
-    const allSegments = [];
+  async downloadAllSegments(onProgress, concurrency = 5) {
     const total = this.tsSegments.length;
-
-    // 简单并发（5个一组）
-    const concurrency = 5;
-    const chunks = [];
-    for (let i = 0; i < total; i += concurrency) {
-      chunks.push(this.tsSegments.slice(i, i + concurrency));
-    }
-
+    const allSegments = new Array(total);
     let downloaded = 0;
-    for (const chunk of chunks) {
-      const results = await Promise.all(
-        chunk.map((s) => this.downloadSegment(s))
-      );
-      allSegments.push(...results);
-
-      downloaded += chunk.length;
-      if (onProgress) {
-        onProgress({
-          stage: 'downloading',
-          current: downloaded,
-          total,
-          percent: Math.round((downloaded / total) * 100),
-          message: `正在下载视频片段... (${downloaded}/${total})`
-        });
+    let activeDownloads = 0;
+    let currentIndex = 0;
+    
+    // 创建下载队列
+    const downloadQueue = async () => {
+      while (currentIndex < total) {
+        const index = currentIndex++;
+        const segment = this.tsSegments[index];
+        
+        activeDownloads++;
+        try {
+          const data = await this.downloadSegment(segment);
+          allSegments[index] = data;
+          downloaded++;
+          
+          if (onProgress) {
+            onProgress({
+              stage: 'downloading',
+              current: downloaded,
+              total,
+              percent: Math.round((downloaded / total) * 100),
+              message: `正在下载视频片段... (${downloaded}/${total})`
+            });
+          }
+        } catch (error) {
+          console.error(`下载片段 ${index} 失败:`, error);
+          throw error;
+        } finally {
+          activeDownloads--;
+        }
       }
+    };
+    
+    // 启动并发下载
+    const workers = [];
+    for (let i = 0; i < Math.min(concurrency, total); i++) {
+      workers.push(downloadQueue());
     }
-
+    
+    // 等待所有下载完成
+    await Promise.all(workers);
+    
+    // 合并所有片段
     return concatUint8Arrays(allSegments);
   }
 
@@ -412,7 +458,7 @@ class LocalM3U8DownloaderSimple {
             total: progress.total
           });
         }
-      });
+      }, this.concurrency);
 
       if (onProgress)
         onProgress({ stage: "saving", message: "正在保存文件..." });

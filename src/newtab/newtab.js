@@ -98,6 +98,7 @@ function createUrlItem(item) {
   downloadBtn.className = 'btn btn-small btn-primary';
   downloadBtn.textContent = i18n.getMessage('serverDownloadButton');
   downloadBtn.onclick = () => downloadVideo(item);
+  downloadBtn.style.display = 'none'; //TODO暂时屏蔽服务器下载按钮
   
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'btn btn-small btn-secondary';
