@@ -11,6 +11,10 @@
     "message": "流影守护",
     "description": "应用标题"
   },
+  "appTitle2": {
+    "message": "流影守护 | 完美的M3U8流媒体下载器",
+    "description": "应用标题"
+  },
   "urlCount": {
     "message": "$1 个URL",
     "description": "URL数量显示"

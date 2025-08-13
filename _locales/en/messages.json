@@ -7,6 +7,10 @@
     "message": "Professional M3U8 stream downloader. Automatically detect, capture and convert HLS streams to MP4 format. Save your favorite videos effortlessly.",
     "description": "Extension description"
   },
+  "appTitle2": {
+    "message": "M3U8 Keeper | Professional m3u8 stream downloader",
+    "description": "Application title"
+  },
   "appTitle": {
     "message": "M3U8 Keeper",
     "description": "Application title"
