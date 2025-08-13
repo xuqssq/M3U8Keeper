@@ -6,10 +6,20 @@ const urlCountElement = document.getElementById('urlCount');
 const clearAllButton = document.getElementById('clearAll');
 const downloadStatusElement = document.getElementById('downloadStatus');
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 等待语言管理器初始化完成
+  if (window.i18n && window.i18n.ready) {
+    await window.i18n.ready();
+  }
+  
   loadUrls();
   
   clearAllButton.addEventListener('click', clearAllUrls);
+  
+  // 监听语言变化事件
+  window.addEventListener('languageChanged', () => {
+    renderUrlList();
+  });
   
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'DOWNLOAD_PROGRESS') {
@@ -39,13 +49,13 @@ function loadUrls() {
 }
 
 function renderUrlList() {
-  urlCountElement.textContent = `${urlList.length} 个URL`;
+  i18n.updateUrlCount(urlList.length);
   
   if (urlList.length === 0) {
     urlListContainer.innerHTML = `
       <div class="empty-state">
-        <p>暂无捕获的URL</p>
-        <p class="hint">访问包含目标URL的页面即可自动捕获</p>
+        <p>${i18n.getMessage('emptyState')}</p>
+        <p class="hint">${i18n.getMessage('emptyStateHint')}</p>
       </div>
     `;
     return;
@@ -81,22 +91,22 @@ function createUrlItem(item) {
   
   const copyBtn = document.createElement('button');
   copyBtn.className = 'btn btn-small btn-success';
-  copyBtn.textContent = '复制';
+  copyBtn.textContent = i18n.getMessage('copyButton');
   copyBtn.onclick = () => copyUrl(item.url, copyBtn);
   
   const downloadBtn = document.createElement('button');
   downloadBtn.className = 'btn btn-small btn-primary';
-  downloadBtn.textContent = '服务器下载';
+  downloadBtn.textContent = i18n.getMessage('serverDownloadButton');
   downloadBtn.onclick = () => downloadVideo(item);
   
   const deleteBtn = document.createElement('button');
   deleteBtn.className = 'btn btn-small btn-secondary';
-  deleteBtn.textContent = '删除';
+  deleteBtn.textContent = i18n.getMessage('deleteButton');
   deleteBtn.onclick = () => deleteUrl(item.id);
   
   const localDownloadBtn = document.createElement('button');
   localDownloadBtn.className = 'btn btn-small btn-warning';
-  localDownloadBtn.textContent = '本地下载';
+  localDownloadBtn.textContent = i18n.getMessage('localDownloadButton');
   localDownloadBtn.onclick = () => localDownloadVideo(item);
   
   buttonContainer.appendChild(copyBtn);

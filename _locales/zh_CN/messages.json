@@ -1,0 +1,149 @@
+{
+  "extensionName": {
+    "message": "流影守护",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "专业的M3U8流媒体下载器。自动检测、捕获并将HLS流转换为MP4格式。轻松保存您喜爱的视频。",
+    "description": "扩展描述"
+  },
+  "appTitle": {
+    "message": "流影守护",
+    "description": "应用标题"
+  },
+  "urlCount": {
+    "message": "$1 个URL",
+    "description": "URL数量显示"
+  },
+  "clearButton": {
+    "message": "清空",
+    "description": "清空按钮"
+  },
+  "downloadButton": {
+    "message": "下载",
+    "description": "下载按钮"
+  },
+  "copyButton": {
+    "message": "复制",
+    "description": "复制按钮"
+  },
+  "deleteButton": {
+    "message": "删除",
+    "description": "删除按钮"
+  },
+  "serverDownloadButton": {
+    "message": "服务器下载",
+    "description": "服务器下载按钮"
+  },
+  "localDownloadButton": {
+    "message": "本地下载",
+    "description": "本地下载按钮"
+  },
+  "emptyState": {
+    "message": "暂无捕获的URL",
+    "description": "空状态消息"
+  },
+  "emptyStateHint": {
+    "message": "访问包含目标URL的页面即可自动捕获",
+    "description": "空状态提示"
+  },
+  "confirmClearAll": {
+    "message": "确定要清空所有捕获的URL吗？",
+    "description": "清空确认"
+  },
+  "downloadInProgress": {
+    "message": "已有视频正在下载中，请等待当前下载完成后再试！",
+    "description": "下载中警告"
+  },
+  "creatingTask": {
+    "message": "正在创建下载任务...",
+    "description": "创建任务消息"
+  },
+  "initializingLocalDownload": {
+    "message": "正在初始化本地下载...",
+    "description": "初始化本地下载"
+  },
+  "parsingM3U8": {
+    "message": "正在解析m3u8文件...",
+    "description": "解析m3u8消息"
+  },
+  "downloadingSegments": {
+    "message": "正在下载视频片段...",
+    "description": "下载片段消息"
+  },
+  "downloadingSegmentsProgress": {
+    "message": "正在下载视频片段... ($CURRENT$/$TOTAL$)",
+    "description": "带进度的下载片段",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "convertingToMp4": {
+    "message": "正在转换为MP4格式...",
+    "description": "转换消息"
+  },
+  "savingFile": {
+    "message": "正在保存文件...",
+    "description": "保存文件消息"
+  },
+  "downloadComplete": {
+    "message": "下载完成！",
+    "description": "下载完成消息"
+  },
+  "downloadFailed": {
+    "message": "下载失败: $ERROR$",
+    "description": "下载失败消息",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "processingVideo": {
+    "message": "正在处理视频... $PERCENT$%",
+    "description": "带百分比的处理视频",
+    "placeholders": {
+      "percent": {
+        "content": "$1"
+      }
+    }
+  },
+  "tsProgressTitle": {
+    "message": "TS切片下载进度 ($CURRENT$/$TOTAL$)",
+    "description": "TS进度标题",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "segmentTooltip": {
+    "message": "切片 $INDEX$",
+    "description": "切片提示",
+    "placeholders": {
+      "index": {
+        "content": "$1"
+      }
+    }
+  },
+  "copiedMessage": {
+    "message": "已复制！",
+    "description": "已复制消息"
+  },
+  "copyFailedAlert": {
+    "message": "复制失败，请手动复制",
+    "description": "复制失败警告"
+  },
+  "ffmpegFallback": {
+    "message": "FFmpeg下载失败，尝试使用简化版下载器：",
+    "description": "FFmpeg回退消息"
+  }
+}

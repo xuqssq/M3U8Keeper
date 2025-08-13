@@ -9,7 +9,12 @@ const clearAllButton = document.getElementById('clearAll');
 const downloadButton = document.getElementById('downloadBtn');
 
 // 初始化
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 等待语言管理器初始化完成
+  if (window.i18n && window.i18n.ready) {
+    await window.i18n.ready();
+  }
+  
   loadUrls();
   
   // 绑定清空按钮事件
@@ -17,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 绑定下载按钮事件
   downloadButton.addEventListener('click', openNewtab);
+  
+  // 监听语言变化事件
+  window.addEventListener('languageChanged', () => {
+    renderUrlList();
+  });
 });
 
 // 加载URL列表
@@ -38,13 +48,14 @@ function loadUrls() {
 
 // 渲染URL列表
 function renderUrlList() {
-  urlCountElement.textContent = `${urlList.length} 个URL`;
+  // 使用i18n更新URL计数
+  i18n.updateUrlCount(urlList.length);
   
   if (urlList.length === 0) {
     urlListContainer.innerHTML = `
       <div class="empty-state">
-        <p>暂无捕获的URL</p>
-        <p class="hint">访问包含目标URL的页面即可自动捕获</p>
+        <p>${i18n.getMessage('emptyState')}</p>
+        <p class="hint">${i18n.getMessage('emptyStateHint')}</p>
       </div>
     `;
     return;
@@ -90,7 +101,7 @@ function createUrlItem(item) {
 function clearAllUrls() {
   if (urlList.length === 0) return;
   
-  if (confirm('确定要清空所有捕获的URL吗？')) {
+  if (confirm(i18n.getMessage('confirmClearAll'))) {
     chrome.runtime.sendMessage({ type: 'CLEAR_ALL' }, (response) => {
       if (response && response.success) {
         urlList = [];

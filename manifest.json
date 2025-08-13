@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "M3U8 Keeper",
+  "name": "__MSG_extensionName__",
   "version": "1.0.0",
-  "description": "Professional M3U8 stream downloader. Automatically detect, capture and convert HLS streams to MP4 format. Save your favorite videos effortlessly.",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "permissions": [
     "storage",
     "webRequest",

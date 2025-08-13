@@ -26,18 +26,27 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .header h1 {
   font-size: 24px;
   color: #2c3e50;
   font-weight: 600;
-}
-
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 15px;
+  margin: 0;
 }
 
 .url-count {
@@ -188,6 +197,27 @@ body {
 
 .btn-danger:hover {
   background: #c0392b;
+}
+
+.language-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.language-select:hover {
+  border-color: #0066cc;
+}
+
+.language-select:focus {
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0,102,204,0.1);
 }
 
 .btn-copied {
@@ -386,8 +416,12 @@ body {
   
   .header {
     padding: 15px 20px;
-    flex-direction: column;
-    gap: 15px;
+  }
+  
+  .header-left,
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
   }
   
   .header h1 {

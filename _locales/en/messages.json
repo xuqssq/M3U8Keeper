@@ -1,0 +1,149 @@
+{
+  "extensionName": {
+    "message": "M3U8 Keeper",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Professional M3U8 stream downloader. Automatically detect, capture and convert HLS streams to MP4 format. Save your favorite videos effortlessly.",
+    "description": "Extension description"
+  },
+  "appTitle": {
+    "message": "M3U8 Keeper",
+    "description": "Application title"
+  },
+  "urlCount": {
+    "message": "$1 URLs",
+    "description": "URL count display"
+  },
+  "clearButton": {
+    "message": "Clear",
+    "description": "Clear all button"
+  },
+  "downloadButton": {
+    "message": "Download",
+    "description": "Download button"
+  },
+  "copyButton": {
+    "message": "Copy",
+    "description": "Copy button"
+  },
+  "deleteButton": {
+    "message": "Delete",
+    "description": "Delete button"
+  },
+  "serverDownloadButton": {
+    "message": "Server Download",
+    "description": "Server download button"
+  },
+  "localDownloadButton": {
+    "message": "Local Download",
+    "description": "Local download button"
+  },
+  "emptyState": {
+    "message": "No captured URLs",
+    "description": "Empty state message"
+  },
+  "emptyStateHint": {
+    "message": "Visit pages with target URLs to capture automatically",
+    "description": "Empty state hint"
+  },
+  "confirmClearAll": {
+    "message": "Are you sure you want to clear all captured URLs?",
+    "description": "Clear all confirmation"
+  },
+  "downloadInProgress": {
+    "message": "A video is already downloading, please wait for it to complete!",
+    "description": "Download in progress warning"
+  },
+  "creatingTask": {
+    "message": "Creating download task...",
+    "description": "Creating task message"
+  },
+  "initializingLocalDownload": {
+    "message": "Initializing local download...",
+    "description": "Initializing local download"
+  },
+  "parsingM3U8": {
+    "message": "Parsing m3u8 file...",
+    "description": "Parsing m3u8 message"
+  },
+  "downloadingSegments": {
+    "message": "Downloading video segments...",
+    "description": "Downloading segments message"
+  },
+  "downloadingSegmentsProgress": {
+    "message": "Downloading video segments... ($CURRENT$/$TOTAL$)",
+    "description": "Downloading segments with progress",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "convertingToMp4": {
+    "message": "Converting to MP4 format...",
+    "description": "Converting message"
+  },
+  "savingFile": {
+    "message": "Saving file...",
+    "description": "Saving file message"
+  },
+  "downloadComplete": {
+    "message": "Download complete!",
+    "description": "Download complete message"
+  },
+  "downloadFailed": {
+    "message": "Download failed: $ERROR$",
+    "description": "Download failed message",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "processingVideo": {
+    "message": "Processing video... $PERCENT$%",
+    "description": "Processing video with percentage",
+    "placeholders": {
+      "percent": {
+        "content": "$1"
+      }
+    }
+  },
+  "tsProgressTitle": {
+    "message": "TS Segment Download Progress ($CURRENT$/$TOTAL$)",
+    "description": "TS progress title",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "segmentTooltip": {
+    "message": "Segment $INDEX$",
+    "description": "Segment tooltip",
+    "placeholders": {
+      "index": {
+        "content": "$1"
+      }
+    }
+  },
+  "copiedMessage": {
+    "message": "Copied!",
+    "description": "Copied message"
+  },
+  "copyFailedAlert": {
+    "message": "Copy failed, please copy manually",
+    "description": "Copy failed alert"
+  },
+  "ffmpegFallback": {
+    "message": "FFmpeg failed, trying simplified downloader:",
+    "description": "FFmpeg fallback message"
+  }
+}
