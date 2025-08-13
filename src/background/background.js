@@ -203,7 +203,7 @@ function updateBadge(count) {
 
 // 监听扩展安装或更新
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('ShowMeBug URL Catcher 扩展已安装/更新');
+  console.log('M3U8Keeper 扩展已安装/更新');
   // 初始化badge
   updateBadge(capturedUrls.length);
 });
