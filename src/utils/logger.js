@@ -8,7 +8,7 @@ const Logger = {
   colors: {
     primary: '#FF6B6B',     // Coral red
     secondary: '#4ECDC4',   // Teal
-    success: '#95E77E',     // Light green
+    success: '#10B981',     // Emerald
     warning: '#FFE66D',     // Yellow
     error: '#FF6B6B',       // Red
     info: '#A8E6CF',        // Mint green
@@ -19,7 +19,7 @@ const Logger = {
   // Initialize logger with banner
   init(context = 'M3U8Keeper') {
     console.log(
-      '\n' +
+      
       '%c M3U8Keeper %c v' + this.version + ' %c\n' +
       '%c The Ultimate M3U8 Media Capture Tool \n\n',
       'color: #fff; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); padding: 5px 10px; border-radius: 3px 0 0 3px; font-weight: bold;',
@@ -55,8 +55,8 @@ const Logger = {
     const timestamp = new Date().toLocaleTimeString();
     console.log(
       `%c 🏅 SUCCESS %c ${message} %c[${timestamp}]`,
-      'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
-      'color: #95E77E; padding: 2px 4px;',
+      'background: #34D399; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #10B981; padding: 2px 4px;',
       'color: #999; font-size: 11px;'
     );
     if (data) {

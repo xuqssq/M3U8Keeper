@@ -7,11 +7,11 @@ let isDownloading = false;
 
 // Professional console banner
 console.log(
-  '\n' +
-  '%c M3U8Keeper %c Background Service %c Running \n',
+  
+  '%c M3U8Keeper %c Background Service %c Running',
   'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px 0 0 3px; font-weight: bold;',
   'background: #764ba2; color: white; padding: 4px 8px;',
-  'background: #95E77E; color: #2D3436; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
+  'background: #34D399; color: #2D3436; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
 );
 
 // 监听来自content script的消息
@@ -57,8 +57,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     console.log(
       '%c 🏅 %c ' + capturedUrls.length + ' URLs remaining',
-      'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
-      'color: #95E77E; padding: 2px 4px;'
+      'background: #34D399; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+      'color: #10B981; padding: 2px 4px;'
     );
     updateBadge(capturedUrls.length);
     sendResponse({ success: true, urls: capturedUrls });
@@ -203,8 +203,8 @@ async function downloadVideo(m3u8Url, customFileName) {
       } else {
         console.log(
           '%c 🏅 SUCCESS %c Download started - ID: ' + downloadId,
-          'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
-          'color: #95E77E; padding: 2px 4px;'
+          'background: #34D399; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+          'color: #10B981; padding: 2px 4px;'
         );
       }
     });
@@ -295,6 +295,6 @@ updateBadge(capturedUrls.length);
 
 console.log(
   '%c 🏅 %c Background service initialized',
-  'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
-  'color: #95E77E; padding: 2px 4px;'
+  'background: #34D399; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+  'color: #10B981; padding: 2px 4px;'
 );

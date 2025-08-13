@@ -5,11 +5,11 @@
   
   // Professional console banner
   console.log(
-    '\n' +
-    '%c M3U8Keeper %c Network Interceptor %c Active \n',
+    
+    '%c M3U8Keeper %c Network Interceptor %c Active',
     'background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px 0 0 3px; font-weight: bold;',
     'background: #764ba2; color: white; padding: 4px 8px;',
-    'background: #95E77E; color: #2D3436; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
+    'background: #34D399; color: #2D3436; padding: 4px 8px; border-radius: 0 3px 3px 0; font-weight: bold;'
   );
   
   // 拦截XMLHttpRequest
@@ -100,7 +100,7 @@
   
   console.log(
     '%c 🏅 %c Network interception initialized successfully',
-    'background: #95E77E; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
-    'color: #95E77E; padding: 2px 4px;'
+    'background: #34D399; color: #2D3436; padding: 2px 6px; border-radius: 3px; font-weight: bold;',
+    'color: #10B981; padding: 2px 4px;'
   );
 })();
