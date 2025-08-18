@@ -7,7 +7,6 @@
   "permissions": [
     "storage",
     "tabs",
-    "scripting",
     "downloads"
   ],
   "host_permissions": [
